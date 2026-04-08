@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
 import { AppSessionProvider } from '../shared/session/AppSessionContext';
+import { AppErrorBoundary } from './components/common/AppErrorBoundary';
 import './styles/index.css';
 import '../auth/src/styles/index.css';
 
@@ -14,15 +15,17 @@ const root = createRoot(container);
 
 root.render(
   <React.StrictMode>
-    <AppSessionProvider>
-      <Router
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true
-        }}
-      >
-        <App />
-      </Router>
-    </AppSessionProvider>
+    <AppErrorBoundary>
+      <AppSessionProvider>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
+          <App />
+        </Router>
+      </AppSessionProvider>
+    </AppErrorBoundary>
   </React.StrictMode>
 );

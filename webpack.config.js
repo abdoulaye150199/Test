@@ -15,11 +15,18 @@ const resolveApiOrigin = (apiUrl) => {
 module.exports = (_, argv = {}) => {
   const mode = argv.mode || 'development';
   const apiUrl = process.env.REACT_APP_API_URL || DEFAULT_API_URL;
+  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
   const apiOrigin = resolveApiOrigin(apiUrl);
+  const supabaseOrigin = resolveApiOrigin(supabaseUrl);
   const connectSources = new Set(["'self'"]);
 
   if (apiOrigin) {
     connectSources.add(apiOrigin);
+  }
+
+  if (supabaseOrigin) {
+    connectSources.add(supabaseOrigin);
+    connectSources.add(supabaseOrigin.replace(/^http/i, 'ws'));
   }
 
   connectSources.add('http://localhost:3000');
