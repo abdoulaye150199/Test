@@ -95,6 +95,10 @@ module.exports = (_, argv = {}) => {
         }
       }),
       new webpack.DefinePlugin({
+        __SHOP_API_URL__: JSON.stringify(apiUrl),
+        __SHOP_SUPABASE_URL__: JSON.stringify(process.env.REACT_APP_SUPABASE_URL || ''),
+        __SHOP_SUPABASE_ANON_KEY__: JSON.stringify(process.env.REACT_APP_SUPABASE_ANON_KEY || ''),
+        __SHOP_ENABLE_API_MOCKS__: JSON.stringify(process.env.REACT_APP_ENABLE_API_MOCKS || ''),
         'process.env.REACT_APP_TOKEN_KEY': JSON.stringify(process.env.REACT_APP_TOKEN_KEY || 'kukuza_token'),
         'process.env.REACT_APP_API_URL': JSON.stringify(apiUrl),
         'process.env.REACT_APP_SUPABASE_URL': JSON.stringify(process.env.REACT_APP_SUPABASE_URL || ''),

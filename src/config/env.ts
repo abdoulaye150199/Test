@@ -1,12 +1,9 @@
 const DEFAULT_API_URL = 'http://localhost:3000/api';
 
-const readEnv = (key: string): string | undefined => {
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[key];
-  }
-
-  return undefined;
-};
+declare const __SHOP_API_URL__: string;
+declare const __SHOP_ENABLE_API_MOCKS__: string;
+declare const __SHOP_SUPABASE_URL__: string;
+declare const __SHOP_SUPABASE_ANON_KEY__: string;
 
 const normalizeBaseUrl = (value: string | undefined): string => {
   const resolved = value?.trim() || DEFAULT_API_URL;
@@ -44,13 +41,13 @@ const shouldEnableMocksByDefault = (): boolean => {
 };
 
 export const shopEnv = {
-  apiBaseUrl: normalizeBaseUrl(readEnv('REACT_APP_API_URL')),
-  enableApiMocks: parseBoolean(readEnv('REACT_APP_ENABLE_API_MOCKS'), shouldEnableMocksByDefault()),
-  supabaseUrl: normalizeOptional(readEnv('REACT_APP_SUPABASE_URL')),
-  supabaseAnonKey: normalizeOptional(readEnv('REACT_APP_SUPABASE_ANON_KEY')),
+  apiBaseUrl: normalizeBaseUrl(__SHOP_API_URL__),
+  enableApiMocks: parseBoolean(__SHOP_ENABLE_API_MOCKS__, shouldEnableMocksByDefault()),
+  supabaseUrl: normalizeOptional(__SHOP_SUPABASE_URL__),
+  supabaseAnonKey: normalizeOptional(__SHOP_SUPABASE_ANON_KEY__),
   useSupabase: Boolean(
-    normalizeOptional(readEnv('REACT_APP_SUPABASE_URL')) &&
-      normalizeOptional(readEnv('REACT_APP_SUPABASE_ANON_KEY'))
+    normalizeOptional(__SHOP_SUPABASE_URL__) &&
+      normalizeOptional(__SHOP_SUPABASE_ANON_KEY__)
   ),
   requestTimeoutMs: 10000,
 };
