@@ -1,0 +1,6 @@
+
+# Local configuration and documentation
+.env.example
+CLEANUP_ARCHITECTURE.md
+CLEANUP_SUMMARY.md
+README_ARCHITECTURE.md

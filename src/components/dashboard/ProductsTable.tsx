@@ -1,0 +1,162 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { EllipsisVertical, Search } from 'lucide-react';
+import Card from '../common/Card';
+import Tabs, { Tab } from '../common/Tabs';
+import Pagination from '../common/Pagination';
+import type { Product, ProductFilter } from '../../types';
+
+const ITEMS_PER_PAGE = 6;
+
+interface ProductsTableProps {
+  products: Product[];
+}
+
+const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
+  const [activeTab, setActiveTab] = useState<ProductFilter>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const tabs: Tab[] = [
+    { id: 'all', label: 'Produits', count: products.length },
+    { id: 'in_stock', label: 'En Stocks', count: products.filter(p => p.status === 'in_stock').length },
+    { id: 'low_stock', label: 'Stock Faible', count: products.filter(p => p.status === 'low_stock').length },
+    { id: 'out_of_stock', label: 'Stocks Épuisés', count: products.filter(p => p.status === 'out_of_stock').length }
+  ];
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesStatus = activeTab === 'all' || product.status === activeTab;
+      
+      const matchesSearch = searchQuery === '' || 
+        product.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      return matchesStatus && matchesSearch;
+    });
+  }, [products, activeTab, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery]);
+
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredProducts.slice(startIndex, endIndex);
+  }, [filteredProducts, currentPage]);
+
+  const getStatusBadge = (status: Product['status']) => {
+    switch (status) {
+      case 'in_stock':
+        return <span className="badge-success">En Stocks</span>;
+      case 'out_of_stock':
+        return <span className="badge-error">Épuisé</span>;
+      case 'low_stock':
+        return <span className="badge-warning">Stock Faible</span>;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="table-container">
+      <div className="p-3 md:p-4 border-b border-(--color-border) flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
+        <div className="flex-1 min-w-0">
+          <Tabs 
+            tabs={tabs} 
+            activeTab={activeTab} 
+            onTabChange={(tabId) => setActiveTab(tabId as ProductFilter)} 
+          />
+        </div>
+        
+        {/* Barre de recherche */}
+        <div className="relative w-full md:w-80">
+          <Search 
+            size={18} 
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-(--color-text-tertiary)"
+          />
+          <input
+            type="text"
+            placeholder="Rechercher..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-(--color-border) rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--color-primary) focus:border-transparent transition-all"
+          />
+        </div>
+      </div>
+
+      <div className="overflow-x-auto table-responsive">
+        <table className="table">
+          <thead>
+            <tr>
+              <th className="text-xs md:text-sm">Références</th>
+              <th className="hidden sm:table-cell text-xs md:text-sm">Product</th>
+              <th className="hidden md:table-cell text-xs md:text-sm">Catégories produits</th>
+              <th className="text-xs md:text-sm">Qté</th>
+              <th className="hidden lg:table-cell text-xs md:text-sm">Statut Stock</th>
+              <th className="text-xs md:text-sm">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedProducts.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-(--color-text-secondary) text-sm">
+                  {searchQuery ? 'Aucun produit trouvé pour votre recherche' : 'Aucun produit trouvé'}
+                </td>
+              </tr>
+            ) : (
+              paginatedProducts.map((product) => (
+                <tr key={product.id}>
+                  <td className="font-medium text-xs md:text-sm">{product.reference}</td>
+                  <td className="hidden sm:table-cell">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-(--color-secondary) flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {product.image ? (
+                          <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xs md:text-xs text-(--color-text-tertiary)">
+                            IMG
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs md:text-sm truncate">{product.name}</span>
+                    </div>
+                  </td>
+                  <td className="hidden md:table-cell text-xs md:text-sm text-(--color-text-secondary)">{product.category}</td>
+                  <td className="font-medium text-xs md:text-sm">{product.stock}</td>
+                  <td className="hidden lg:table-cell text-xs md:text-sm">{getStatusBadge(product.status)}</td>
+                  <td>
+                    <button className="icon-btn" title="Plus d'options">
+                      <EllipsisVertical size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {filteredProducts.length > ITEMS_PER_PAGE && (
+        <div className="px-3 md:px-4">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={ITEMS_PER_PAGE}
+            totalItems={filteredProducts.length}
+          />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ProductsTable;

@@ -1,0 +1,25 @@
+{
+  "auth": {
+    "isAuthenticated": false,
+    "currentUserId": null,
+    "token": null
+  },
+  "users": [],
+  "shop": null,
+  "dashboard": {
+    "stats": {
+      "totalRevenue": 0,
+      "revenueChange": 0,
+      "dailyRevenue": 0,
+      "dailyRevenueChange": 0,
+      "totalSales": 0,
+      "salesChange": 0,
+      "activeUsers": 0,
+      "usersChange": 0
+    },
+    "salesData": [],
+    "visitsData": []
+  },
+  "products": [],
+  "sales": []
+}
