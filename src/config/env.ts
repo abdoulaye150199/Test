@@ -1,5 +1,13 @@
 const DEFAULT_API_URL = 'http://localhost:3000/api';
 
+const readEnv = (key: string): string | undefined => {
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key];
+  }
+
+  return undefined;
+};
+
 const normalizeBaseUrl = (value: string | undefined): string => {
   const resolved = value?.trim() || DEFAULT_API_URL;
   return resolved.replace(/\/+$/, '');
@@ -36,13 +44,13 @@ const shouldEnableMocksByDefault = (): boolean => {
 };
 
 export const shopEnv = {
-  apiBaseUrl: normalizeBaseUrl(process.env.REACT_APP_API_URL),
-  enableApiMocks: parseBoolean(process.env.REACT_APP_ENABLE_API_MOCKS, shouldEnableMocksByDefault()),
-  supabaseUrl: normalizeOptional(process.env.REACT_APP_SUPABASE_URL),
-  supabaseAnonKey: normalizeOptional(process.env.REACT_APP_SUPABASE_ANON_KEY),
+  apiBaseUrl: normalizeBaseUrl(readEnv('REACT_APP_API_URL')),
+  enableApiMocks: parseBoolean(readEnv('REACT_APP_ENABLE_API_MOCKS'), shouldEnableMocksByDefault()),
+  supabaseUrl: normalizeOptional(readEnv('REACT_APP_SUPABASE_URL')),
+  supabaseAnonKey: normalizeOptional(readEnv('REACT_APP_SUPABASE_ANON_KEY')),
   useSupabase: Boolean(
-    normalizeOptional(process.env.REACT_APP_SUPABASE_URL) &&
-      normalizeOptional(process.env.REACT_APP_SUPABASE_ANON_KEY)
+    normalizeOptional(readEnv('REACT_APP_SUPABASE_URL')) &&
+      normalizeOptional(readEnv('REACT_APP_SUPABASE_ANON_KEY'))
   ),
   requestTimeoutMs: 10000,
 };
