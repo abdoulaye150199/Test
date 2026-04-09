@@ -22,7 +22,7 @@ const initialValues: BoutiqueFormValues = {
   email: '',
   address: '',
   postalCode: '',
-  country: 'Mali',
+  country: 'Sénégal',
   phoneNumber: '',
   description: '',
 };
@@ -44,7 +44,7 @@ const COUNTRY_CODES: CountryCode[] = [
 ];
 
 const COUNTRIES: string[] = [
-  'Mali', 'Sénégal', 'Côte d\'Ivoire', 'Burkina Faso', 'Niger', 
+  'Sénégal', 'Mali', 'Côte d\'Ivoire', 'Burkina Faso', 'Niger', 
   'Bénin', 'Togo', 'Guinée', 'France', 'Autre'
 ];
 
@@ -127,7 +127,7 @@ export const BoutiqueRegisterPage: FC = () => {
         </div>
 
         {authError && (
-          <div className="bg-red-500 bg-opacity-10 border border-red-500 text-red-500 px-2.5 sm:px-3 py-1.5 rounded relative text-xs sm:text-sm" role="alert">
+          <div className="bg-red-500 bg-opacity-10 border border-red-500 text-white px-2.5 sm:px-3 py-1.5 rounded relative text-xs sm:text-sm" role="alert">
             <span className="block sm:inline">{authError}</span>
           </div>
         )}
@@ -204,7 +204,8 @@ export const BoutiqueRegisterPage: FC = () => {
                 <select
                   value={countryCode}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCountryCode(e.target.value)}
-                  className="auth-input w-16 xs:w-20 sm:w-24 text-xs xs:text-sm"
+                  className="auth-input shrink-0 text-xs xs:text-sm"
+                  style={{ width: '6.7rem' }}
                 >
                   {COUNTRY_CODES.map((item) => (
                     <option key={item.code} value={item.code} className="bg-gray-800">
@@ -219,7 +220,7 @@ export const BoutiqueRegisterPage: FC = () => {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="77 456 98 09"
-                  className={`auth-input flex-1 ${errors.phoneNumber && touched.phoneNumber ? 'ring-2 ring-red-500 focus:ring-red-500 border-red-500' : ''}`}
+                  className={`auth-input min-w-0 flex-1 ${errors.phoneNumber && touched.phoneNumber ? 'ring-2 ring-red-500 focus:ring-red-500 border-red-500' : ''}`}
                 />
               </div>
             </div>

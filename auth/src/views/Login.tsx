@@ -41,7 +41,7 @@ export const LoginPage = () => {
         </div>
 
         {authError && (
-          <div className="bg-red-500 bg-opacity-10 border border-red-500 text-red-500 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded relative text-xs sm:text-sm" role="alert">
+          <div className="bg-red-500 bg-opacity-10 border border-red-500 text-white px-2.5 sm:px-3 py-1.5 sm:py-2 rounded relative text-xs sm:text-sm" role="alert">
             <span className="block sm:inline">{authError}</span>
           </div>
         )}
