@@ -32,6 +32,32 @@ const envValues = {
   ),
 };
 
+const isLoopbackHostname = (hostname: string): boolean => {
+  return ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname);
+};
+
+const sanitizeApiUrl = (value: string | undefined): string | undefined => {
+  const resolved = value?.trim();
+  if (!resolved) {
+    return undefined;
+  }
+
+  try {
+    const apiUrl = new URL(resolved);
+    const currentHostname = typeof window !== 'undefined' ? window.location.hostname : undefined;
+
+    if (currentHostname && !isLoopbackHostname(currentHostname) && isLoopbackHostname(apiUrl.hostname)) {
+      return undefined;
+    }
+  } catch {
+    return resolved;
+  }
+
+  return resolved;
+};
+
+const sanitizedApiUrl = sanitizeApiUrl(envValues.apiUrl);
+
 const normalizeBaseUrl = (value: string | undefined): string => {
   const resolved = value?.trim();
   return resolved ? resolved.replace(/\/++$/, '') : '';
@@ -60,7 +86,7 @@ const parseBoolean = (value: string | undefined, fallback: boolean): boolean => 
 };
 
 const shouldEnableMocksByDefault = (): boolean => {
-  if (!envValues.apiUrl && !envValues.supabaseUrl && !envValues.supabaseAnonKey) {
+  if (!sanitizedApiUrl && !envValues.supabaseUrl && !envValues.supabaseAnonKey) {
     return true;
   }
 
@@ -72,7 +98,7 @@ const shouldEnableMocksByDefault = (): boolean => {
 };
 
 export const shopEnv = {
-  apiBaseUrl: normalizeBaseUrl(envValues.apiUrl),
+  apiBaseUrl: normalizeBaseUrl(sanitizedApiUrl),
   enableApiMocks: parseBoolean(envValues.enableApiMocks, shouldEnableMocksByDefault()),
   supabaseUrl: normalizeOptional(envValues.supabaseUrl),
   supabaseAnonKey: normalizeOptional(envValues.supabaseAnonKey),
