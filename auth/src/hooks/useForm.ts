@@ -1,12 +1,14 @@
 import { useState, ChangeEvent, FocusEvent, FormEvent } from 'react';
 import { z } from 'zod';
 
+type FormFieldElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
 interface UseFormProps<T> {
   values: T;
   errors: Record<string, string>;
   touched: Record<string, boolean>;
-  handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  handleBlur: (e: FocusEvent<HTMLInputElement>) => Promise<void>;
+  handleChange: (e: ChangeEvent<FormFieldElement>) => void;
+  handleBlur: (e: FocusEvent<FormFieldElement>) => Promise<void>;
   handleSubmit: (callback: (values: T) => void | Promise<void>) => (e: FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
@@ -18,7 +20,7 @@ export const useForm = <T extends Record<string, any>>(
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
+  const handleChange = (e: ChangeEvent<FormFieldElement>): void => {
     const { name, value } = e.target;
     setValues((prev) => ({
       ...prev,
@@ -33,7 +35,7 @@ export const useForm = <T extends Record<string, any>>(
     }
   };
 
-  const handleBlur = async (e: FocusEvent<HTMLInputElement>): Promise<void> => {
+  const handleBlur = async (e: FocusEvent<FormFieldElement>): Promise<void> => {
     const { name } = e.target;
     setTouched((prev) => ({
       ...prev,
@@ -84,7 +86,13 @@ export const useForm = <T extends Record<string, any>>(
           }
         });
       }
-      
+
+      setTouched(
+        Object.keys(values).reduce<Record<string, boolean>>((acc, key) => {
+          acc[key] = true;
+          return acc;
+        }, {})
+      );
       setErrors(newErrors);
       return false;
     }

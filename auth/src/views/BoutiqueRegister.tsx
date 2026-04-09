@@ -1,11 +1,14 @@
-import React, { useState, FC } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, FC } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { useForm } from '../hooks/useForm';
 import { useAuth } from '../hooks/useAuth';
 import { boutiqueValidationSchema } from '../utils/validation';
 import { AuthLayout } from '../components/layout/AuthLayout';
+import {
+  clearPendingBoutiqueUserData,
+} from '../utils/pendingBoutiqueRegistration';
 
 interface BoutiqueFormValues {
   shopName: string;
@@ -50,14 +53,19 @@ const COUNTRIES: string[] = [
 
 export const BoutiqueRegisterPage: FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { register, loading, error: authError } = useAuth();
+  const { completeBoutiqueSetup, loading, error: authError, isAuthenticated, user } = useAuth();
   const [countryCode, setCountryCode] = useState<string>('+221');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const userData = location.state?.userData || {};
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      navigate('/register', { replace: true });
+    }
+  }, [isAuthenticated, navigate, user]);
+
   const {
     values,
     errors,
@@ -68,15 +76,21 @@ export const BoutiqueRegisterPage: FC = () => {
   } = useForm(initialValues, boutiqueValidationSchema);
 
   const handleBoutiqueRegister = async (formValues: BoutiqueFormValues): Promise<void> => {
+    if (!isAuthenticated || !user) {
+      setSubmitError('Session utilisateur introuvable. Reprenez l inscription depuis le debut.');
+      return;
+    }
+
     try {
+      setSubmitError(null);
       const boutiqueData = {
-        ...userData,
         ...formValues,
         phoneNumber: `${countryCode}${formValues.phoneNumber}`,
         logo: logoFile,
-        isBoutique: true,
       };
-      await register(boutiqueData);
+
+      await completeBoutiqueSetup(boutiqueData);
+      clearPendingBoutiqueUserData();
       navigate('/');
     } catch (error) {
     }
@@ -126,9 +140,9 @@ export const BoutiqueRegisterPage: FC = () => {
           </h2>
         </div>
 
-        {authError && (
+        {(submitError || authError) && (
           <div className="bg-red-500 bg-opacity-10 border border-red-500 text-white px-2.5 sm:px-3 py-1.5 rounded relative text-xs sm:text-sm" role="alert">
-            <span className="block sm:inline">{authError}</span>
+            <span className="block sm:inline">{submitError || authError}</span>
           </div>
         )}
 
@@ -146,7 +160,7 @@ export const BoutiqueRegisterPage: FC = () => {
               onBlur={handleBlur}
               error={errors.shopName}
               touched={touched.shopName}
-              placeholder="entrez votre mail"
+              placeholder="entrez le nom de votre boutique"
             />
 
             <Input

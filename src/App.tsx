@@ -36,6 +36,10 @@ const GuestRoute: React.FC<{ children: React.ReactElement }> = ({ children }) =>
 const BoutiqueSetupRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const { isAuthenticated, shop } = useAppSession();
 
+  if (!isAuthenticated) {
+    return <Navigate to="/register" replace />;
+  }
+
   if (isAuthenticated && shop) {
     return <Navigate to="/dashboard" replace />;
   }

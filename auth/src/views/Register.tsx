@@ -1,12 +1,14 @@
 import React, { useState, FC } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { useForm } from '../hooks/useForm';
 import { useAuth } from '../hooks/useAuth';
 import { registerValidationSchema } from '../utils/validation';
 import { AuthLayout } from '../components/layout/AuthLayout';
-import { BoutiqueRegisterPage } from './BoutiqueRegister';
+import {
+  clearPendingBoutiqueUserData,
+} from '../utils/pendingBoutiqueRegistration';
 
 interface RegisterFormValues {
   name: string;
@@ -26,7 +28,6 @@ export const RegisterPage: FC = () => {
   const navigate = useNavigate();
   const { register, loading, error: authError } = useAuth();
   const [isBoutique, setIsBoutique] = useState<boolean>(false);
-  const [showBoutiqueForm, setShowBoutiqueForm] = useState<boolean>(false);
   const {
     values,
     errors,
@@ -36,15 +37,22 @@ export const RegisterPage: FC = () => {
     handleSubmit,
   } = useForm(initialValues, registerValidationSchema);
 
-  const handleContinueToBoutique = (): void => {
-    const { confirmPassword, ...userData } = values;
-    navigate('/register/boutique', { state: { userData } });
+  const handleContinueToBoutique = async (formValues: RegisterFormValues): Promise<void> => {
+    const { confirmPassword, ...userData } = formValues;
+
+    try {
+      clearPendingBoutiqueUserData();
+      await register({ ...userData, isBoutique: false });
+      navigate('/register/boutique');
+    } catch (error) {
+    }
   };
 
   const handleRegister = async (formValues: RegisterFormValues): Promise<void> => {
     const { confirmPassword, ...userData } = formValues;
     
     try {
+      clearPendingBoutiqueUserData();
       await register({ ...userData, isBoutique: false });
       navigate('/');
     } catch (error) {
@@ -67,15 +75,7 @@ export const RegisterPage: FC = () => {
 
         <form
           className="mt-1 sm:mt-1.5 md:mt-2 space-y-1.5 sm:space-y-2"
-          onSubmit={(e) => {
-            if (isBoutique) {
-              e.preventDefault();
-              handleContinueToBoutique();
-              return;
-            }
-
-            void handleSubmit(handleRegister)(e);
-          }}
+          onSubmit={handleSubmit(isBoutique ? handleContinueToBoutique : handleRegister)}
         >
           <div className="space-y-1 sm:space-y-1.5">
             <Input

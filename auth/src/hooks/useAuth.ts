@@ -20,6 +20,16 @@ interface RegisterData {
   logo?: File | null;
 }
 
+interface BoutiqueSetupData {
+  shopName?: string;
+  address?: string;
+  postalCode?: string;
+  country?: string;
+  phoneNumber?: string;
+  description?: string;
+  logo?: File | null;
+}
+
 interface AuthResponse {
   user: {
     id: string;
@@ -39,6 +49,7 @@ interface UseAuthReturn {
   error: string | null;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   register: (userData: RegisterData) => Promise<AuthResponse>;
+  completeBoutiqueSetup: (shopData: BoutiqueSetupData) => Promise<unknown>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
@@ -79,6 +90,21 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [session]);
 
+  const completeBoutiqueSetup = useCallback(async (shopData: BoutiqueSetupData) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      return await session.completeBoutiqueSetup(shopData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Impossible de finaliser la boutique.';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [session]);
+
   const logout = useCallback(async () => {
     try {
       await session.logout();
@@ -98,6 +124,7 @@ export const useAuth = (): UseAuthReturn => {
     error,
     login,
     register,
+    completeBoutiqueSetup,
     logout,
     checkAuth,
   };

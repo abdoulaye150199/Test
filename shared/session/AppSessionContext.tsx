@@ -11,6 +11,7 @@ import {
   type StoredUser,
 } from './appStateStorage';
 import {
+  completeSupabaseBoutiqueSetup,
   loadSupabaseSessionState,
   loginWithSupabase,
   logoutFromSupabase,
@@ -38,6 +39,16 @@ interface RegisterData {
   logo?: File | null;
 }
 
+interface BoutiqueSetupData {
+  shopName?: string;
+  address?: string;
+  postalCode?: string;
+  country?: string;
+  phoneNumber?: string;
+  description?: string;
+  logo?: File | null;
+}
+
 interface AuthResponse {
   user: User;
   token: string;
@@ -50,6 +61,7 @@ interface AppSessionContextValue {
   shop: Boutique | null;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   register: (data: RegisterData) => Promise<AuthResponse>;
+  completeBoutiqueSetup: (data: BoutiqueSetupData) => Promise<Boutique | null>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   updateShopProfile: (shopName: string, shopLogo: File | null) => Promise<Boutique | null>;
@@ -286,6 +298,57 @@ export const AppSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, [persistState]);
 
+  const completeBoutiqueSetup = useCallback(async (data: BoutiqueSetupData): Promise<Boutique | null> => {
+    if (shopEnv.useSupabase) {
+      const result = await completeSupabaseBoutiqueSetup(data);
+      persistState(result.state);
+      const owner = result.state.users[0];
+      return result.state.shop && owner ? mapStoredShop(result.state.shop, owner) : null;
+    }
+
+    const currentState = stateRef.current;
+    const currentUser = getCurrentUserRecord(currentState);
+
+    if (!currentUser) {
+      throw new Error('Session utilisateur introuvable. Reprenez l inscription depuis le debut.');
+    }
+
+    const now = new Date().toISOString();
+    const nextUser: StoredUser = {
+      ...currentUser,
+      role: 'owner',
+      updatedAt: now,
+    };
+    const logo = data.logo instanceof File ? await fileToDataUrl(data.logo) : currentState.shop?.logo;
+    const nextShop: StoredShop = {
+      id: currentState.shop?.id ?? `shop-${Date.now()}`,
+      name: data.shopName?.trim() || currentState.shop?.name || 'Ma boutique',
+      logo,
+      ownerId: nextUser.id,
+      address: data.address?.trim() || currentState.shop?.address,
+      postalCode: data.postalCode?.trim() || currentState.shop?.postalCode,
+      country: data.country?.trim() || currentState.shop?.country,
+      phoneNumber: data.phoneNumber?.trim() || currentState.shop?.phoneNumber,
+      description: data.description?.trim() || currentState.shop?.description,
+      createdAt: currentState.shop?.createdAt ?? now,
+      updatedAt: now,
+    };
+    const nextState: StoredAppState = {
+      ...currentState,
+      users: currentState.users.map((user) => (user.id === nextUser.id ? nextUser : user)),
+      shop: nextShop,
+      auth: {
+        ...currentState.auth,
+        isAuthenticated: true,
+        currentUserId: nextUser.id,
+        token: currentState.auth.token || createToken(nextUser.id),
+      },
+    };
+
+    persistState(nextState);
+    return mapStoredShop(nextShop, nextUser);
+  }, [persistState]);
+
   const logout = useCallback(async (): Promise<void> => {
     if (shopEnv.useSupabase) {
       await logoutFromSupabase();
@@ -367,10 +430,11 @@ export const AppSessionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     shop: currentShop,
     login,
     register,
+    completeBoutiqueSetup,
     logout,
     checkAuth,
     updateShopProfile,
-  }), [checkAuth, currentShop, currentUser, login, logout, register, state.auth.isAuthenticated, updateShopProfile]);
+  }), [checkAuth, completeBoutiqueSetup, currentShop, currentUser, login, logout, register, state.auth.isAuthenticated, updateShopProfile]);
 
   return <AppSessionContext.Provider value={value}>{children}</AppSessionContext.Provider>;
 };

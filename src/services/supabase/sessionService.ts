@@ -27,6 +27,16 @@ interface RegisterData {
   logo?: File | null;
 }
 
+interface BoutiqueSetupData {
+  shopName?: string;
+  address?: string;
+  postalCode?: string;
+  country?: string;
+  phoneNumber?: string;
+  description?: string;
+  logo?: File | null;
+}
+
 interface AuthResponse {
   user: User;
   token: string;
@@ -223,6 +233,73 @@ export const registerWithSupabase = async (
   input: RegisterData
 ): Promise<{ auth: AuthResponse; state: StoredAppState }> => {
   const supabase = getSupabaseClient();
+  const isBoutiqueRegistration = Boolean(input.isBoutique);
+  const now = nowIso();
+
+  if (isBoutiqueRegistration) {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      throw new Error(sessionError.message || 'Impossible de verifier la session Supabase.');
+    }
+
+    if (sessionData.session?.user) {
+      const activeUser = sessionData.session.user;
+      const userId = ensureUserIdentity(activeUser);
+      const profilePayload = {
+        id: userId,
+        name:
+          input.name?.trim() ||
+          String(activeUser.user_metadata?.name || '').trim() ||
+          activeUser.email?.trim().toLowerCase() ||
+          'Utilisateur',
+        email: input.email?.trim().toLowerCase() || activeUser.email?.trim().toLowerCase() || '',
+        role: 'owner' as User['role'],
+        updated_at: now,
+        created_at: now,
+      };
+
+      if (!profilePayload.email) {
+        throw new Error('Informations utilisateur incomplètes.');
+      }
+
+      const { error: profileError } = await supabase.from('profiles').upsert(profilePayload);
+      if (profileError) {
+        throw new Error(profileError.message || 'Impossible de mettre a jour le profil Supabase.');
+      }
+
+      const logo = input.logo instanceof File ? await fileToDataUrl(input.logo) : null;
+      const { error: shopError } = await supabase.from('shops').upsert({
+        owner_id: userId,
+        name: input.shopName?.trim() || 'Ma boutique',
+        logo,
+        address: input.address?.trim() || null,
+        postal_code: input.postalCode?.trim() || null,
+        country: input.country?.trim() || null,
+        phone_number: input.phoneNumber?.trim() || null,
+        description: input.description?.trim() || null,
+        updated_at: now,
+        created_at: now,
+      });
+
+      if (shopError) {
+        throw new Error(shopError.message || 'Impossible de creer la boutique Supabase.');
+      }
+
+      const profile = await fetchProfile(userId);
+      const shop = await fetchShop(userId);
+      const built = buildStoredState(profile, shop, sessionData.session.access_token);
+
+      return {
+        auth: {
+          user: built.user,
+          token: sessionData.session.access_token,
+          role: built.role,
+        },
+        state: built.state,
+      };
+    }
+  }
 
   if (!input.name?.trim() || !input.email?.trim() || !input.password?.trim()) {
     throw new Error('Informations utilisateur incomplètes.');
@@ -244,13 +321,12 @@ export const registerWithSupabase = async (
 
   const session = ensureActiveSession(data.session);
   const userId = ensureUserIdentity(data.user);
-  const now = nowIso();
 
   const profilePayload = {
     id: userId,
     name: input.name.trim(),
     email: input.email.trim().toLowerCase(),
-    role: (input.isBoutique ? 'owner' : 'staff') as User['role'],
+    role: (isBoutiqueRegistration ? 'owner' : 'staff') as User['role'],
     updated_at: now,
     created_at: now,
   };
@@ -260,7 +336,7 @@ export const registerWithSupabase = async (
     throw new Error(profileError.message || 'Impossible de creer le profil Supabase.');
   }
 
-  if (input.isBoutique) {
+  if (isBoutiqueRegistration) {
     const logo = input.logo instanceof File ? await fileToDataUrl(input.logo) : null;
     const { error: shopError } = await supabase.from('shops').upsert({
       owner_id: userId,
@@ -288,6 +364,76 @@ export const registerWithSupabase = async (
     auth: {
       user: built.user,
       token: session.access_token,
+      role: built.role,
+    },
+    state: built.state,
+  };
+};
+
+export const completeSupabaseBoutiqueSetup = async (
+  input: BoutiqueSetupData
+): Promise<{ auth: AuthResponse; state: StoredAppState }> => {
+  const supabase = getSupabaseClient();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error(sessionError.message || 'Impossible de verifier la session Supabase.');
+  }
+
+  if (!sessionData.session?.user) {
+    throw new Error('Session utilisateur expiree. Reconnectez-vous puis reessayez.');
+  }
+
+  const activeUser = sessionData.session.user;
+  const userId = ensureUserIdentity(activeUser);
+  const now = nowIso();
+  const profilePayload = {
+    id: userId,
+    name:
+      String(activeUser.user_metadata?.name || '').trim() ||
+      activeUser.email?.trim().toLowerCase() ||
+      'Utilisateur',
+    email: activeUser.email?.trim().toLowerCase() || '',
+    role: 'owner' as User['role'],
+    updated_at: now,
+    created_at: now,
+  };
+
+  if (!profilePayload.email) {
+    throw new Error('Profil utilisateur introuvable. Reconnectez-vous puis reessayez.');
+  }
+
+  const { error: profileError } = await supabase.from('profiles').upsert(profilePayload);
+  if (profileError) {
+    throw new Error(profileError.message || 'Impossible de mettre a jour le profil Supabase.');
+  }
+
+  const logo = input.logo instanceof File ? await fileToDataUrl(input.logo) : null;
+  const { error: shopError } = await supabase.from('shops').upsert({
+    owner_id: userId,
+    name: input.shopName?.trim() || 'Ma boutique',
+    logo,
+    address: input.address?.trim() || null,
+    postal_code: input.postalCode?.trim() || null,
+    country: input.country?.trim() || null,
+    phone_number: input.phoneNumber?.trim() || null,
+    description: input.description?.trim() || null,
+    updated_at: now,
+    created_at: now,
+  });
+
+  if (shopError) {
+    throw new Error(shopError.message || 'Impossible de creer la boutique Supabase.');
+  }
+
+  const profile = await fetchProfile(userId);
+  const shop = await fetchShop(userId);
+  const built = buildStoredState(profile, shop, sessionData.session.access_token);
+
+  return {
+    auth: {
+      user: built.user,
+      token: sessionData.session.access_token,
       role: built.role,
     },
     state: built.state,
