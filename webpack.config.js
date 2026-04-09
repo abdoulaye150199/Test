@@ -14,10 +14,10 @@ const resolveApiOrigin = (apiUrl) => {
 
 module.exports = (_, argv = {}) => {
   const mode = argv.mode || 'development';
-  const apiUrl = process.env.REACT_APP_API_URL || DEFAULT_API_URL;
-  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-  const apiOrigin = resolveApiOrigin(apiUrl);
-  const supabaseOrigin = resolveApiOrigin(supabaseUrl);
+  const apiUrl = process.env.REACT_APP_API_URL || (mode === 'development' ? DEFAULT_API_URL : undefined);
+  const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || undefined;
+  const apiOrigin = apiUrl ? resolveApiOrigin(apiUrl) : null;
+  const supabaseOrigin = supabaseUrl ? resolveApiOrigin(supabaseUrl) : null;
   const connectSources = new Set(["'self'"]);
 
   if (apiOrigin) {
@@ -96,16 +96,14 @@ module.exports = (_, argv = {}) => {
       }),
       new webpack.DefinePlugin({
         __SHOP_API_URL__: JSON.stringify(apiUrl),
-        __SHOP_SUPABASE_URL__: JSON.stringify(process.env.REACT_APP_SUPABASE_URL || ''),
-        __SHOP_SUPABASE_ANON_KEY__: JSON.stringify(process.env.REACT_APP_SUPABASE_ANON_KEY || ''),
-        __SHOP_ENABLE_API_MOCKS__: JSON.stringify(process.env.REACT_APP_ENABLE_API_MOCKS || ''),
+        __SHOP_SUPABASE_URL__: JSON.stringify(process.env.REACT_APP_SUPABASE_URL),
+        __SHOP_SUPABASE_ANON_KEY__: JSON.stringify(process.env.REACT_APP_SUPABASE_ANON_KEY),
+        __SHOP_ENABLE_API_MOCKS__: JSON.stringify(process.env.REACT_APP_ENABLE_API_MOCKS),
         'process.env.REACT_APP_TOKEN_KEY': JSON.stringify(process.env.REACT_APP_TOKEN_KEY || 'kukuza_token'),
-        'process.env.REACT_APP_API_URL': JSON.stringify(apiUrl),
-        'process.env.REACT_APP_SUPABASE_URL': JSON.stringify(process.env.REACT_APP_SUPABASE_URL || ''),
-        'process.env.REACT_APP_SUPABASE_ANON_KEY': JSON.stringify(process.env.REACT_APP_SUPABASE_ANON_KEY || ''),
-        'process.env.REACT_APP_ENABLE_API_MOCKS': JSON.stringify(
-          process.env.REACT_APP_ENABLE_API_MOCKS || 'true'
-        )
+        'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL),
+        'process.env.REACT_APP_SUPABASE_URL': JSON.stringify(process.env.REACT_APP_SUPABASE_URL),
+        'process.env.REACT_APP_SUPABASE_ANON_KEY': JSON.stringify(process.env.REACT_APP_SUPABASE_ANON_KEY),
+        'process.env.REACT_APP_ENABLE_API_MOCKS': JSON.stringify(process.env.REACT_APP_ENABLE_API_MOCKS)
       })
     ],
     devServer: {

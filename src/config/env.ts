@@ -33,8 +33,8 @@ const envValues = {
 };
 
 const normalizeBaseUrl = (value: string | undefined): string => {
-  const resolved = value?.trim() || DEFAULT_API_URL;
-  return resolved.replace(/\/+$/, '');
+  const resolved = value?.trim();
+  return resolved ? resolved.replace(/\/++$/, '') : '';
 };
 
 const normalizeOptional = (value: string | undefined): string | undefined => {
@@ -60,6 +60,10 @@ const parseBoolean = (value: string | undefined, fallback: boolean): boolean => 
 };
 
 const shouldEnableMocksByDefault = (): boolean => {
+  if (!envValues.apiUrl && !envValues.supabaseUrl && !envValues.supabaseAnonKey) {
+    return true;
+  }
+
   if (typeof window === 'undefined') {
     return false;
   }
