@@ -17,8 +17,9 @@ const VisitsChart: React.FC<VisitsChartProps> = ({ data, title = 'Visites' }) =>
         </h3>
       </div>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={data}>
+      <div className="h-[240px] sm:h-[300px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis 
             dataKey="day" 
@@ -43,8 +44,9 @@ const VisitsChart: React.FC<VisitsChartProps> = ({ data, title = 'Visites' }) =>
             fill="#90EE90" 
             radius={[8, 8, 0, 0]}
           />
-        </BarChart>
-      </ResponsiveContainer>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </Card>
   );
 };

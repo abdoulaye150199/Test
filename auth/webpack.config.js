@@ -56,6 +56,7 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: './public/index.html',
+      favicon: path.resolve(__dirname, 'public/favicon.ico'),
       meta: {
         'Content-Security-Policy': {
           'http-equiv': 'Content-Security-Policy',

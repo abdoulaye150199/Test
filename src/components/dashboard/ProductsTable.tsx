@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { EllipsisVertical, Search } from 'lucide-react';
-import Card from '../common/Card';
 import Tabs, { Tab } from '../common/Tabs';
 import Pagination from '../common/Pagination';
 import type { Product, ProductFilter } from '../../types';
+import { formatCurrency } from '../../utils/formatters';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -62,7 +62,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
 
   return (
     <div className="table-container">
-      <div className="p-3 md:p-4 border-b border-(--color-border) flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
+      <div className="flex flex-col gap-3 border-b border-(--color-border) p-3 md:flex-row md:items-center md:justify-between md:gap-6 md:p-4">
         <div className="flex-1 min-w-0">
           <Tabs 
             tabs={tabs} 
@@ -71,7 +71,6 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
           />
         </div>
         
-        {/* Barre de recherche */}
         <div className="relative w-full md:w-80">
           <Search 
             size={18} 
@@ -87,7 +86,60 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
         </div>
       </div>
 
-      <div className="overflow-x-auto table-responsive">
+      {paginatedProducts.length === 0 ? (
+        <div className="px-4 py-8 text-center text-sm text-(--color-text-secondary)">
+          {searchQuery ? 'Aucun produit trouvé pour votre recherche' : 'Aucun produit trouvé'}
+        </div>
+      ) : (
+        <>
+          <div className="divide-y divide-(--color-border) md:hidden">
+            {paginatedProducts.map((product) => (
+              <article key={product.id} className="space-y-4 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-(--color-secondary)">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-2xs text-(--color-text-tertiary)">IMG</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-(--color-text-primary)">{product.name}</p>
+                      <p className="truncate text-xs text-(--color-text-secondary)">{product.category}</p>
+                    </div>
+                  </div>
+                  <button className="icon-btn shrink-0" title="Plus d'options">
+                    <EllipsisVertical size={16} />
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {getStatusBadge(product.status)}
+                  <span className="rounded-full bg-(--color-surface-hover) px-3 py-1 text-xs font-medium text-(--color-text-secondary)">
+                    Ref: {product.reference}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-xl bg-(--color-surface-hover) px-3 py-2">
+                    <p className="text-2xs uppercase tracking-wide text-(--color-text-tertiary)">Prix</p>
+                    <p className="mt-1 font-semibold text-(--color-text-primary)">{formatCurrency(product.price)}</p>
+                  </div>
+                  <div className="rounded-xl bg-(--color-surface-hover) px-3 py-2">
+                    <p className="text-2xs uppercase tracking-wide text-(--color-text-tertiary)">Stock</p>
+                    <p className="mt-1 font-semibold text-(--color-text-primary)">{product.stock}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto table-responsive md:block">
         <table className="table">
           <thead>
             <tr>
@@ -100,50 +152,43 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
             </tr>
           </thead>
           <tbody>
-            {paginatedProducts.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-8 text-(--color-text-secondary) text-sm">
-                  {searchQuery ? 'Aucun produit trouvé pour votre recherche' : 'Aucun produit trouvé'}
+            {paginatedProducts.map((product) => (
+              <tr key={product.id}>
+                <td className="font-medium text-xs md:text-sm">{product.reference}</td>
+                <td className="hidden sm:table-cell">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-(--color-secondary) flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {product.image ? (
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-2xs md:text-xs text-(--color-text-tertiary)">
+                          IMG
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs md:text-sm truncate">{product.name}</span>
+                  </div>
+                </td>
+                <td className="hidden md:table-cell text-xs md:text-sm text-(--color-text-secondary)">{product.category}</td>
+                <td className="font-medium text-xs md:text-sm">{product.stock}</td>
+                <td className="hidden lg:table-cell text-xs md:text-sm">{getStatusBadge(product.status)}</td>
+                <td>
+                  <button className="icon-btn" title="Plus d'options">
+                    <EllipsisVertical size={16} />
+                  </button>
                 </td>
               </tr>
-            ) : (
-              paginatedProducts.map((product) => (
-                <tr key={product.id}>
-                  <td className="font-medium text-xs md:text-sm">{product.reference}</td>
-                  <td className="hidden sm:table-cell">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-(--color-secondary) flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {product.image ? (
-                          <img 
-                            src={product.image} 
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-2xs md:text-xs text-(--color-text-tertiary)">
-                            IMG
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs md:text-sm truncate">{product.name}</span>
-                    </div>
-                  </td>
-                  <td className="hidden md:table-cell text-xs md:text-sm text-(--color-text-secondary)">{product.category}</td>
-                  <td className="font-medium text-xs md:text-sm">{product.stock}</td>
-                  <td className="hidden lg:table-cell text-xs md:text-sm">{getStatusBadge(product.status)}</td>
-                  <td>
-                    <button className="icon-btn" title="Plus d'options">
-                      <EllipsisVertical size={16} />
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
-      </div>
+          </div>
+        </>
+      )}
 
-      {/* Pagination */}
       {filteredProducts.length > ITEMS_PER_PAGE && (
         <div className="px-3 md:px-4">
           <Pagination

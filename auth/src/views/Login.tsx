@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { useForm } from '../hooks/useForm';
@@ -13,7 +13,6 @@ const initialValues = {
 };
 
 export const LoginPage = () => {
-  const navigate = useNavigate();
   const { login, loading, error: authError } = useAuth();
   const {
     values,
@@ -27,7 +26,6 @@ export const LoginPage = () => {
   const handleLogin = async (formValues: typeof initialValues) => {
     try {
       await login(formValues);
-      navigate('/');
     } catch (error) {
     }
   };

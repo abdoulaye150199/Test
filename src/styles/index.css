@@ -291,6 +291,14 @@
     display: flex;
     gap: 0.5rem;
     border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.125rem;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .tab {
@@ -303,6 +311,8 @@
     border-bottom: 2px solid transparent;
     cursor: pointer;
     transition: all var(--transition-fast);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .tab:hover {
@@ -327,6 +337,7 @@
   .table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 640px;
   }
 
   .table thead {
@@ -534,6 +545,19 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
+
+  .stat-card-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .stat-card-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-card-change {
+    font-size: var(--font-size-2xs);
+  }
 }
 
 @media (max-width: 480px) {
@@ -553,6 +577,15 @@
   .stat-card {
     padding: var(--spacing-sm);
     border-radius: var(--radius-md);
+  }
+
+  .stat-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .stat-card-value {
+    font-size: 1.25rem;
   }
 
   .btn {

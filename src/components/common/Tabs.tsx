@@ -21,9 +21,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onTabChange }) => {
           className={`tab ${activeTab === tab.id ? 'active' : ''}`}
           onClick={() => onTabChange(tab.id)}
         >
-          {tab.label}
+          <span className="shrink-0">{tab.label}</span>
           {tab.count !== undefined && (
-            <span className="ml-2 text-xs text-(--color-text-tertiary)">
+            <span className="ml-2 shrink-0 text-xs text-(--color-text-tertiary)">
               ({tab.count})
             </span>
           )}

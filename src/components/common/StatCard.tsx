@@ -23,21 +23,21 @@ const StatCard: React.FC<StatCardProps> = ({
 
   return (
     <Card className="stat-card">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <div className="text-sm text-(--color-text-secondary) mb-2">
             {label}
           </div>
-          <div className="text-3xl font-bold text-(--color-text-primary) mb-2">
+          <div className="stat-card-value mb-2 break-words text-2xl font-bold text-(--color-text-primary) md:text-3xl">
             {value}
           </div>
           {change !== undefined && (
-            <div className={`stat-card-change ${isPositive ? 'positive' : isNegative ? 'negative' : ''}`}>
+            <div className={`stat-card-change inline-flex w-fit ${isPositive ? 'positive' : isNegative ? 'negative' : ''}`}>
               {isPositive ? '+' : ''}{change}% {changeLabel}
             </div>
           )}
         </div>
-        <div className={`stat-card-icon ${iconBgColor}`}>
+        <div className={`stat-card-icon shrink-0 ${iconBgColor}`}>
           {icon}
         </div>
       </div>

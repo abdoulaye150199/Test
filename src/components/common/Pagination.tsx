@@ -64,19 +64,16 @@ const Pagination: React.FC<PaginationProps> = ({
   }
 
   return (
-    <div className="flex items-center justify-between mt-6 pt-6 border-t border-(--color-border)">
-      {/* Info sur les éléments affichés */}
+    <div className="mt-6 flex flex-col gap-4 border-t border-(--color-border) pt-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-sm text-(--color-text-secondary)">
         Affichage de {startItem} à {endItem} sur {totalItems} résultats
       </div>
 
-      {/* Contrôles de pagination */}
-      <div className="flex items-center gap-2">
-        {/* Bouton Précédent */}
+      <div className="flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-end">
         <button
           onClick={handlePrevious}
           disabled={currentPage === 1}
-          className={`flex items-center gap-1 px-3 py-2 text-sm rounded-md transition-colors ${
+          className={`flex flex-1 items-center justify-center gap-1 rounded-md px-3 py-2 text-sm transition-colors sm:flex-none ${
             currentPage === 1
               ? 'text-(--color-text-tertiary) cursor-not-allowed'
               : 'text-(--color-text-secondary) hover:bg-(--color-surface-hover)'
@@ -86,8 +83,7 @@ const Pagination: React.FC<PaginationProps> = ({
           Précédent
         </button>
 
-        {/* Numéros de page */}
-        <div className="flex items-center gap-1">
+        <div className="order-last flex w-full items-center justify-center gap-1 sm:order-none sm:w-auto">
           {getPageNumbers().map((page, index) => (
             <React.Fragment key={index}>
               {page === '...' ? (
@@ -108,11 +104,10 @@ const Pagination: React.FC<PaginationProps> = ({
           ))}
         </div>
 
-        {/* Bouton Suivant */}
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages}
-          className={`flex items-center gap-1 px-3 py-2 text-sm rounded-md transition-colors ${
+          className={`flex flex-1 items-center justify-center gap-1 rounded-md px-3 py-2 text-sm transition-colors sm:flex-none ${
             currentPage === totalPages
               ? 'text-(--color-text-tertiary) cursor-not-allowed'
               : 'text-(--color-text-secondary) hover:bg-(--color-surface-hover)'

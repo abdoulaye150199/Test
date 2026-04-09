@@ -62,57 +62,53 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Mobile Backdrop */}
       {isOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity duration-300"
+          className="fixed inset-0 z-40 bg-black/45 backdrop-blur-[1px] transition-opacity duration-300 md:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar - Desktop Fixed */}
-      <aside className={`fixed left-0 top-0 h-screen w-24 md:w-24 bg-white border-r border-(--color-border) flex flex-col items-center py-6 z-50 transition-transform duration-300 md:translate-x-0 ${
+      <aside className={`fixed left-0 top-0 z-50 flex h-screen w-[18rem] max-w-[85vw] flex-col border-r border-(--color-border) bg-white py-5 shadow-xl transition-transform duration-300 md:w-24 md:items-center md:py-6 md:shadow-none ${
         isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       }`}>
-        {/* Logo */}
-        <div className="mb-8 md:mb-12 flex items-center justify-between w-full px-2">
-          <div className="w-full flex flex-col items-center gap-2 px-1">
-            <div className="w-12 h-12 bg-(--color-primary) rounded-full flex items-center justify-center">
-              <span className="text-white text-xs font-bold text-center">{shopInitials}</span>
+        <div className="mb-6 flex w-full items-start justify-between gap-3 px-4 md:mb-12 md:flex-col md:items-center md:justify-start md:px-2">
+          <div className="flex min-w-0 items-center gap-3 md:w-full md:flex-col md:gap-2 md:px-1">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-(--color-primary)">
+              <span className="text-center text-xs font-bold text-white">{shopInitials}</span>
             </div>
-            <span className="text-2xs text-center font-semibold text-(--color-text-primary) leading-tight">
+            <span className="line-clamp-2 text-sm font-semibold leading-tight text-(--color-text-primary) md:max-w-[80px] md:text-center md:text-2xs">
               {shopName}
             </span>
           </div>
           <button
             onClick={onClose}
-            className="md:hidden text-(--color-text-secondary) hover:text-(--color-text-primary)"
+            className="icon-btn md:hidden"
             title="Fermer"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 w-full">
-          <ul className="space-y-4">
+        <nav className="flex-1 overflow-y-auto px-3 md:w-full md:px-0">
+          <ul className="space-y-2 md:space-y-4">
             {navItems.map((item) => {
               const isActive = activePath === item.path;
               return (
                 <li key={item.path}>
                   <button
                     onClick={() => handleNavigation(item.path)}
-                    className={`w-full flex flex-col items-center gap-2 py-3 px-2 transition-colors ${
+                    className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors md:flex-col md:gap-2 md:rounded-none md:px-2 ${
                       isActive
                         ? 'text-(--color-primary) bg-(--color-primary-lightest)'
                         : 'text-(--color-text-secondary) hover:text-(--color-text-primary) hover:bg-(--color-surface-hover)'
                     }`}
                     title={item.label}
                   >
-                    <span className={isActive ? 'text-(--color-primary)' : ''}>
+                    <span className={`shrink-0 ${isActive ? 'text-(--color-primary)' : ''}`}>
                       {item.icon}
                     </span>
-                    <span className="text-2xs text-center font-medium break-words max-w-[80px] leading-tight">
+                    <span className="text-sm font-medium leading-tight md:max-w-[80px] md:text-center md:text-2xs">
                       {item.label}
                     </span>
                   </button>
@@ -122,13 +118,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           </ul>
         </nav>
 
-        {/* Logout Button */}
         <button
           onClick={onLogout}
-          className="w-full flex flex-col items-center gap-2 py-3 px-2 text-(--color-text-secondary) hover:text-(--color-error) hover:bg-red-50 transition-colors rounded-lg"
+          className="mx-3 mt-4 flex items-center gap-3 rounded-2xl px-4 py-3 text-(--color-text-secondary) transition-colors hover:bg-red-50 hover:text-(--color-error) md:mx-0 md:w-full md:flex-col md:justify-center md:gap-2 md:rounded-lg md:px-2"
           title="Déconnexion"
         >
           <LogOut size={20} />
+          <span className="text-sm font-medium md:hidden">Deconnexion</span>
         </button>
       </aside>
     </>

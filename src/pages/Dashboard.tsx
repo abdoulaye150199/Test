@@ -53,16 +53,16 @@ const DashboardPage: React.FC = () => {
           error={dashboardError}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6">
-          <div className="md:col-span-2 lg:col-span-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-3">
+          <div className="min-w-0 md:col-span-2 lg:col-span-2">
             <SalesChart data={salesData} />
           </div>
-          <div className="md:col-span-1 lg:col-span-1">
+          <div className="min-w-0 md:col-span-1 lg:col-span-1">
             <VisitsChart data={visitsData} />
           </div>
         </div>
 
-        <div className="overflow-hidden">
+        <div className="min-w-0 overflow-hidden">
           <ProductsTable products={products} />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -13,6 +13,18 @@ const DashboardLayout = ({ children, activePath }: DashboardLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { logout, user, shop } = useAppSession();
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+
+    if (isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isSidebarOpen]);
 
   const handleLogout = async () => {
     await logout();
@@ -30,7 +42,7 @@ const DashboardLayout = ({ children, activePath }: DashboardLayoutProps) => {
           void handleLogout();
         }}
       />
-      <div className={`md:ml-24 transition-all duration-300 ${isSidebarOpen ? 'md:opacity-100 opacity-0 pointer-events-none' : 'opacity-100'}`}>
+      <div className="min-h-screen min-w-0 md:ml-24">
         <Header 
           userName={user?.name}
           userEmail={user?.email}
@@ -38,7 +50,7 @@ const DashboardLayout = ({ children, activePath }: DashboardLayoutProps) => {
           notificationCount={1}
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
         />
-        <main className="p-4 md:p-6 lg:p-8 min-h-screen">
+        <main className="min-h-[calc(100vh-4rem)] overflow-x-hidden p-4 md:min-h-[calc(100vh-5rem)] md:p-6 lg:p-8">
           {children}
         </main>
       </div>

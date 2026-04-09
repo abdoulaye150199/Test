@@ -1,5 +1,5 @@
 import React, { useState, FC } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
 import { useForm } from '../hooks/useForm';
@@ -25,7 +25,6 @@ const initialValues: RegisterFormValues = {
 };
 
 export const RegisterPage: FC = () => {
-  const navigate = useNavigate();
   const { register, loading, error: authError } = useAuth();
   const [isBoutique, setIsBoutique] = useState<boolean>(false);
   const {
@@ -43,7 +42,6 @@ export const RegisterPage: FC = () => {
     try {
       clearPendingBoutiqueUserData();
       await register({ ...userData, isBoutique: false });
-      navigate('/register/boutique');
     } catch (error) {
     }
   };
@@ -54,7 +52,6 @@ export const RegisterPage: FC = () => {
     try {
       clearPendingBoutiqueUserData();
       await register({ ...userData, isBoutique: false });
-      navigate('/');
     } catch (error) {
     }
   };
