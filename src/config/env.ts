@@ -60,7 +60,7 @@ const sanitizedApiUrl = sanitizeApiUrl(envValues.apiUrl);
 
 const normalizeBaseUrl = (value: string | undefined): string => {
   const resolved = value?.trim();
-  return resolved ? resolved.replace(/\/++$/, '') : '';
+  return resolved ? resolved.replace(/\/+$/, '') : '';
 };
 
 const normalizeOptional = (value: string | undefined): string | undefined => {
