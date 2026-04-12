@@ -23,8 +23,12 @@ const AddProductPage: React.FC = () => {
   const [mainPreviewUrl, setMainPreviewUrl] = useState<string | null>(null);
 
   const handleInputChange = (field: keyof ProductFormValues, value: string) => {
+    const normalizedValue = field === 'category' || field === 'ageRange' || field === 'gender'
+      ? value.trim()
+      : value;
+
     setFormData((previous) => {
-      const nextFormData = { ...previous, [field]: value };
+      const nextFormData = { ...previous, [field]: normalizedValue };
       if (field === 'ageRange') {
         nextFormData.gender = '';
       }
@@ -156,11 +160,14 @@ const AddProductPage: React.FC = () => {
                     }`}
                   >
                     <option value="">Selectionnez une categorie</option>
-                    {PRODUCT_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
+                    {PRODUCT_CATEGORIES.map((category) => {
+                      const categoryValue = category.trim();
+                      return (
+                        <option key={categoryValue} value={categoryValue}>
+                          {category}
+                        </option>
+                      );
+                    })}
                   </select>
                   {errors.category && <p className="text-xs text-red-500 mt-1">{errors.category}</p>}
                 </div>
