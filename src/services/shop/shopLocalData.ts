@@ -72,3 +72,57 @@ export const createLocalProduct = async (input: CreateProductInput): Promise<Pro
 
   return mapProduct(storedProduct);
 };
+
+export const updateLocalProduct = async (productId: string, input: CreateProductInput): Promise<Product> => {
+  const currentState = getLocalData();
+  const products = Array.isArray(currentState.products) ? currentState.products : [];
+  const productIndex = products.findIndex(p => p.id === productId);
+
+  if (productIndex === -1) {
+    throw new Error('Produit non trouvé');
+  }
+
+  const existingProduct = products[productIndex];
+  const serializedImages = input.images.length > 0 
+    ? await Promise.all(input.images.map(fileToDataUrl))
+    : (existingProduct.images || []);
+
+  const updatedProduct: StoredProduct = {
+    ...existingProduct,
+    name: input.name,
+    category: input.category,
+    price: input.price,
+    stock: input.quantity,
+    images: serializedImages,
+    image: serializedImages[0] || existingProduct.image,
+    ageRange: input.ageRange,
+    gender: input.gender,
+    status: resolveProductStatus(input.quantity),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const updatedProducts = [...products];
+  updatedProducts[productIndex] = updatedProduct;
+
+  saveStoredAppState({
+    ...currentState,
+    products: updatedProducts,
+  });
+
+  return mapProduct(updatedProduct);
+};
+
+export const deleteLocalProduct = async (productId: string): Promise<void> => {
+  const currentState = getLocalData();
+  const products = Array.isArray(currentState.products) ? currentState.products : [];
+  const filteredProducts = products.filter(p => p.id !== productId);
+
+  if (filteredProducts.length === products.length) {
+    throw new Error('Produit non trouvé');
+  }
+
+  saveStoredAppState({
+    ...currentState,
+    products: filteredProducts,
+  });
+};

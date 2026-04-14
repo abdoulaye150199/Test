@@ -6,6 +6,8 @@ import {
   getLocalDashboardOverview,
   getLocalProducts,
   getLocalSales,
+  updateLocalProduct,
+  deleteLocalProduct,
 } from './shopLocalData';
 import { mapDashboardOverview, mapProduct, mapSaleItem } from './shopMappers';
 import {
@@ -126,6 +128,22 @@ export const shopService = {
   },
 
   async updateProduct(productId: string, input: CreateProductInput): Promise<Product> {
+    if (shopEnv.useSupabase) {
+      // Assuming Supabase has update, but not implemented yet
+      return withFallback(
+        'updateProduct',
+        async () => {
+          const response = await requestJson<unknown>(`/products/${productId}`, {
+            method: 'PUT',
+            body: createProductPayload(input),
+          });
+
+          return mapProduct(response);
+        },
+        () => updateLocalProduct(productId, input)
+      );
+    }
+
     return withFallback(
       'updateProduct',
       async () => {
@@ -136,15 +154,24 @@ export const shopService = {
 
         return mapProduct(response);
       },
-      async () => {
-        // Mock pour développement local
-        console.log('Mock updateProduct:', productId, input);
-        throw new Error('updateProduct not implemented in mock mode');
-      }
+      () => updateLocalProduct(productId, input)
     );
   },
 
   async deleteProduct(productId: string): Promise<void> {
+    if (shopEnv.useSupabase) {
+      // Assuming Supabase has delete, but not implemented yet
+      return withFallback(
+        'deleteProduct',
+        async () => {
+          await requestJson<unknown>(`/products/${productId}`, {
+            method: 'DELETE',
+          });
+        },
+        () => deleteLocalProduct(productId)
+      );
+    }
+
     return withFallback(
       'deleteProduct',
       async () => {
@@ -152,11 +179,7 @@ export const shopService = {
           method: 'DELETE',
         });
       },
-      async () => {
-        // Mock pour développement local
-        console.log('Mock deleteProduct:', productId);
-        throw new Error('deleteProduct not implemented in mock mode');
-      }
+      () => deleteLocalProduct(productId)
     );
   },
 };

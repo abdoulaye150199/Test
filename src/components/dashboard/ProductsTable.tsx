@@ -12,9 +12,10 @@ const ITEMS_PER_PAGE = 6;
 
 interface ProductsTableProps {
   products: Product[];
+  onProductsChange?: () => Promise<void>;
 }
 
-const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
+const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChange }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ProductFilter>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -23,6 +24,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const tabs: Tab[] = [
@@ -50,15 +52,11 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
   }, [activeTab, searchQuery]);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
@@ -95,15 +93,19 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
 
   const handleDelete = async (product: Product) => {
     setIsDeleting(true);
+    setMessage(null);
     try {
       await shopService.deleteProduct(product.id);
-      console.log('Produit supprimé:', product.name);
+      setMessage(`Le produit "${product.name}" a été supprimé avec succès.`);
       setOpenMenuId(null);
-      // Recharger les produits (le parent doit implémenter cela)
+      // Recharger les produits
+      if (onProductsChange) {
+        await onProductsChange();
+      }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       const message = error instanceof Error ? error.message : 'Une erreur inconnue est survenue.';
-      alert(`Impossible de supprimer "${product.name}". ${message}`);
+      setMessage(`Impossible de supprimer "${product.name}". ${message}`);
     } finally {
       setIsDeleting(false);
     }
@@ -185,6 +187,16 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
           />
         </div>
       </div>
+
+      {message && (
+        <div className={`mx-3 md:mx-4 p-3 rounded-lg text-sm ${
+          message.includes('supprimé') 
+            ? 'bg-green-50 text-green-700 border border-green-200' 
+            : 'bg-red-50 text-red-700 border border-red-200'
+        }`}>
+          {message}
+        </div>
+      )}
 
       {paginatedProducts.length === 0 ? (
         <div className="px-4 py-8 text-center text-sm text-(--color-text-secondary)">

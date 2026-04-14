@@ -19,6 +19,7 @@ const DashboardPage: React.FC = () => {
     products,
     isLoading: isProductsLoading,
     error: productsError,
+    refetch: refetchProducts,
   } = useProducts();
 
   if (isDashboardLoading || isProductsLoading) {
@@ -63,7 +64,7 @@ const DashboardPage: React.FC = () => {
         </div>
 
         <div className="min-w-0 overflow-hidden">
-          <ProductsTable products={products} />
+          <ProductsTable products={products} onProductsChange={refetchProducts} />
         </div>
       </div>
     </DashboardLayout>
