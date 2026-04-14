@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card from '../components/common/Card';
 import ImageUpload from '../components/common/ImageUpload';
-import type { ProductFormValues } from '../types';
+import type { ProductFormValues, Product } from '../types';
 import { shopService } from '../services/shop/shopService';
+import { useAppSession } from '../../shared/session/AppSessionContext';
 import {
   createEmptyProductForm,
   getGenderOptions,
@@ -13,8 +15,12 @@ import {
   toCreateProductInput,
   validateProductForm,
 } from '../utils/productForm';
+import { getCurrencyByCountry, formatPrice } from '../utils/currency';
 
 const AddProductPage: React.FC = () => {
+  const location = useLocation();
+  const editProduct = (location.state as { editProduct?: Product })?.editProduct;
+  const { shop } = useAppSession();
   const [formData, setFormData] = useState<ProductFormValues>(createEmptyProductForm());
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -22,10 +28,34 @@ const AddProductPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [mainPreviewUrl, setMainPreviewUrl] = useState<string | null>(null);
 
+  const currency = getCurrencyByCountry(shop?.country);
+
+  // Préremplir le formulaire si on est en édition
+  useEffect(() => {
+    if (editProduct) {
+      setFormData({
+        name: editProduct.name,
+        category: editProduct.category,
+        price: formatPrice(String(editProduct.price), shop?.country),
+        quantity: String(editProduct.stock),
+        ageRange: editProduct.ageRange || '',
+        gender: editProduct.gender || '',
+        images: [],
+      });
+      if (editProduct.image) {
+        setMainPreviewUrl(editProduct.image);
+      }
+    }
+  }, [editProduct, shop?.country]);
+
   const handleInputChange = (field: keyof ProductFormValues, value: string) => {
-    const normalizedValue = field === 'category' || field === 'ageRange' || field === 'gender'
-      ? value.trim()
-      : value;
+    let normalizedValue = value;
+    
+    if (field === 'category' || field === 'ageRange' || field === 'gender') {
+      normalizedValue = value.trim();
+    } else if (field === 'price') {
+      normalizedValue = formatPrice(value, shop?.country);
+    }
 
     setFormData((previous) => {
       const nextFormData = { ...previous, [field]: normalizedValue };
@@ -75,9 +105,18 @@ const AddProductPage: React.FC = () => {
     setSubmitSuccess(null);
 
     try {
-      await shopService.createProduct(toCreateProductInput(formData));
-      handleReset();
-      setSubmitSuccess(successMessage);
+      const input = toCreateProductInput(formData);
+      
+      if (editProduct) {
+        // Mode édition
+        await shopService.updateProduct(editProduct.id, input);
+        setSubmitSuccess(successMessage || 'Produit mis à jour avec succès.');
+      } else {
+        // Mode création
+        await shopService.createProduct(input);
+        handleReset();
+        setSubmitSuccess(successMessage || 'Produit enregistré.');
+      }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Impossible de sauvegarder le produit.');
     } finally {
@@ -113,7 +152,7 @@ const AddProductPage: React.FC = () => {
     <DashboardLayout activePath="/produits/ajouter">
       <div className="max-w-7xl mx-auto px-0">
         <h1 className="text-xl md:text-2xl font-bold text-(--color-text-primary) mb-6 md:mb-8">
-          Ajouter vos produits
+          {editProduct ? `Modifier: ${editProduct.name}` : 'Ajouter vos produits'}
         </h1>
 
         {submitError && (
@@ -175,17 +214,18 @@ const AddProductPage: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-(--color-text-primary) mb-2">
                     Prix de l'article <span className="text-red-500">*</span>
+                    <span className="text-(--color-text-tertiary) font-normal ml-1">({currency.symbol})</span>
                   </label>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={formData.price}
                     onChange={(event) => handleInputChange('price', event.target.value)}
                     className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--color-primary) transition-all ${
                       errors.price ? 'border-red-500' : 'border-(--color-border)'
                     }`}
-                    placeholder="0.00"
+                    placeholder="Entrez le prix"
                   />
+                  <p className="text-xs text-(--color-text-tertiary) mt-1">{currency.name} ({currency.code})</p>
                   {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
                 </div>
 
@@ -285,17 +325,40 @@ const AddProductPage: React.FC = () => {
                   className="btn-secondary flex-1"
                   disabled={isSubmitting}
                 >
-                  Reinitialiser
+                  {editProduct ? 'Annuler' : 'Réinitialiser'}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleAddAnother}
-                  className="btn-primary flex-1 flex items-center justify-center gap-2"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Enregistrement...' : 'Ajouter un autre produit'}
-                  <ArrowRight size={18} />
-                </button>
+                {editProduct ? (
+                  <button
+                    type="button"
+                    onClick={() => void submitProduct('Produit mis à jour avec succès.')}
+                    className="btn-primary flex-1 flex items-center justify-center gap-2"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Mise à jour...' : 'Sauvegarder les modifications'}
+                    <ArrowRight size={18} />
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleAddAnother}
+                      className="btn-secondary flex-1 flex items-center justify-center gap-2"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Enregistrement...' : 'Ajouter un autre'}
+                      <ArrowRight size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePublish}
+                      className="btn-primary flex-1 flex items-center justify-center gap-2"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Publication...' : 'Publier le produit'}
+                      <ArrowRight size={18} />
+                    </button>
+                  </>
+                )}
               </div>
             </Card>
           </div>
@@ -336,11 +399,11 @@ const AddProductPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={handlePublish}
+                onClick={editProduct ? () => void submitProduct('Produit mis à jour avec succès.') : handlePublish}
                 className="btn-primary w-full mt-6 flex items-center justify-center gap-2"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Publication...' : 'Publier le produit'}
+                {isSubmitting ? (editProduct ? 'Mise à jour...' : 'Publication...') : (editProduct ? 'Sauvegarder' : 'Publier le produit')}
                 <ArrowRight size={18} />
               </button>
             </Card>

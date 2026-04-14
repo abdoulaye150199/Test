@@ -124,4 +124,39 @@ export const shopService = {
       () => createLocalProduct(input)
     );
   },
+
+  async updateProduct(productId: string, input: CreateProductInput): Promise<Product> {
+    return withFallback(
+      'updateProduct',
+      async () => {
+        const response = await requestJson<unknown>(`/products/${productId}`, {
+          method: 'PUT',
+          body: createProductPayload(input),
+        });
+
+        return mapProduct(response);
+      },
+      async () => {
+        // Mock pour développement local
+        console.log('Mock updateProduct:', productId, input);
+        throw new Error('updateProduct not implemented in mock mode');
+      }
+    );
+  },
+
+  async deleteProduct(productId: string): Promise<void> {
+    return withFallback(
+      'deleteProduct',
+      async () => {
+        await requestJson<unknown>(`/products/${productId}`, {
+          method: 'DELETE',
+        });
+      },
+      async () => {
+        // Mock pour développement local
+        console.log('Mock deleteProduct:', productId);
+        throw new Error('deleteProduct not implemented in mock mode');
+      }
+    );
+  },
 };

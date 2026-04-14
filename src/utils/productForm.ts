@@ -1,12 +1,10 @@
 import type { CreateProductInput, ProductFormValues } from '../types';
+import { extractPriceNumber } from './currency';
 
 export const PRODUCT_CATEGORIES = [
   'Vetements',
   'Chaussures',
   'Accessoires',
-  'Electronique',
-  'Livres',
-  'Jouets',
   'Autres',
 ] as const;
 
@@ -47,8 +45,11 @@ export const validateProductForm = (formData: ProductFormValues): Partial<Record
 
   if (!formData.price.trim()) {
     errors.price = 'Le prix est requis';
-  } else if (Number.isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
-    errors.price = 'Le prix doit etre un nombre valide';
+  } else {
+    const priceNumber = extractPriceNumber(formData.price);
+    if (Number.isNaN(priceNumber) || priceNumber <= 0) {
+      errors.price = 'Le prix doit etre un nombre valide';
+    }
   }
 
   if (!formData.quantity.trim()) {
@@ -71,7 +72,7 @@ export const validateProductForm = (formData: ProductFormValues): Partial<Record
 export const toCreateProductInput = (formData: ProductFormValues): CreateProductInput => ({
   name: formData.name.trim(),
   category: formData.category,
-  price: Number(formData.price),
+  price: extractPriceNumber(formData.price),
   quantity: Number(formData.quantity),
   ageRange: formData.ageRange,
   gender: formData.gender,

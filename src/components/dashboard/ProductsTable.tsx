@@ -1,9 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { EllipsisVertical, Search } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { EllipsisVertical, Search, Eye, Edit2, Trash2 } from 'lucide-react';
 import Tabs, { Tab } from '../common/Tabs';
 import Pagination from '../common/Pagination';
+import ProductDetailsModal from '../common/ProductDetailsModal';
 import type { Product, ProductFilter } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
+import { shopService } from '../../services/shop/shopService';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -12,9 +15,15 @@ interface ProductsTableProps {
 }
 
 const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ProductFilter>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const tabs: Tab[] = [
     { id: 'all', label: 'Produits', count: products.length },
@@ -40,6 +49,17 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
     setCurrentPage(1);
   }, [activeTab, searchQuery]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -58,6 +78,86 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
       default:
         return null;
     }
+  };
+
+  const handleViewDetails = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDetailsModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const handleEdit = (product: Product) => {
+    console.log('Modifier', product);
+    setOpenMenuId(null);
+    // Naviguer vers le formulaire d'édition avec le produit en query params
+    navigate('/produits/ajouter', { state: { editProduct: product } });
+  };
+
+  const handleDelete = async (product: Product) => {
+    setIsDeleting(true);
+    try {
+      await shopService.deleteProduct(product.id);
+      console.log('Produit supprimé:', product.name);
+      setOpenMenuId(null);
+      // Recharger les produits (le parent doit implémenter cela)
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      const message = error instanceof Error ? error.message : 'Une erreur inconnue est survenue.';
+      alert(`Impossible de supprimer "${product.name}". ${message}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const ActionMenu: React.FC<{ product: Product }> = ({ product }) => {
+    const isOpen = openMenuId === product.id;
+
+    return (
+      <div className="relative" ref={isOpen ? menuRef : null}>
+        <button
+          onClick={() => setOpenMenuId(isOpen ? null : product.id)}
+          className="icon-btn"
+          title="Plus d'options"
+        >
+          <EllipsisVertical size={16} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute -right-2 top-8 z-50 w-48 rounded-lg border border-(--color-border) bg-white shadow-xl">
+            <button
+              onClick={() => {
+                handleViewDetails(product);
+                setOpenMenuId(null);
+              }}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm text-(--color-text-primary) hover:bg-(--color-surface-hover) border-b border-(--color-border) transition-colors"
+            >
+              <Eye size={16} />
+              Voir détails
+            </button>
+            <button
+              onClick={() => {
+                handleEdit(product);
+                setOpenMenuId(null);
+              }}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm text-(--color-text-primary) hover:bg-(--color-surface-hover) border-b border-(--color-border) transition-colors"
+            >
+              <Edit2 size={16} />
+              Modifier
+            </button>
+            <button
+              onClick={() => {
+                handleDelete(product);
+                setOpenMenuId(null);
+              }}
+              className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-b-lg"
+            >
+              <Trash2 size={16} />
+              Supprimer
+            </button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -113,9 +213,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
                       <p className="truncate text-xs text-(--color-text-secondary)">{product.category}</p>
                     </div>
                   </div>
-                  <button className="icon-btn shrink-0" title="Plus d'options">
-                    <EllipsisVertical size={16} />
-                  </button>
+                  <ActionMenu product={product} />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -177,9 +275,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
                 <td className="font-medium text-xs md:text-sm">{product.stock}</td>
                 <td className="hidden lg:table-cell text-xs md:text-sm">{getStatusBadge(product.status)}</td>
                 <td>
-                  <button className="icon-btn" title="Plus d'options">
-                    <EllipsisVertical size={16} />
-                  </button>
+                  <ActionMenu product={product} />
                 </td>
               </tr>
             ))}
@@ -200,6 +296,14 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products }) => {
           />
         </div>
       )}
+
+      <ProductDetailsModal
+        product={selectedProduct}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };
