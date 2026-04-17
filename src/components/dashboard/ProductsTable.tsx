@@ -25,17 +25,18 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [localProducts, setLocalProducts] = useState<Product[]>(products);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const tabs: Tab[] = [
-    { id: 'all', label: 'Produits', count: products.length },
-    { id: 'in_stock', label: 'En Stocks', count: products.filter(p => p.status === 'in_stock').length },
-    { id: 'low_stock', label: 'Stock Faible', count: products.filter(p => p.status === 'low_stock').length },
-    { id: 'out_of_stock', label: 'Stocks Épuisés', count: products.filter(p => p.status === 'out_of_stock').length }
+    { id: 'all', label: 'Produits', count: localProducts.length },
+    { id: 'in_stock', label: 'En Stocks', count: localProducts.filter(p => p.status === 'in_stock').length },
+    { id: 'low_stock', label: 'Stock Faible', count: localProducts.filter(p => p.status === 'low_stock').length },
+    { id: 'out_of_stock', label: 'Stocks Épuisés', count: localProducts.filter(p => p.status === 'out_of_stock').length }
   ];
 
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    return localProducts.filter(product => {
       const matchesStatus = activeTab === 'all' || product.status === activeTab;
       
       const matchesSearch = searchQuery === '' || 
@@ -45,11 +46,11 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
       
       return matchesStatus && matchesSearch;
     });
-  }, [products, activeTab, searchQuery]);
+  }, [localProducts, activeTab, searchQuery]);
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchQuery]);
+    setLocalProducts(products);
+  }, [products]);
 
   useEffect(() => {
     if (message) {
@@ -94,16 +95,22 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
   const handleDelete = async (product: Product) => {
     setIsDeleting(true);
     setMessage(null);
+
+    // Suppression optimiste
+    setLocalProducts(prev => prev.filter(p => p.id !== product.id));
+
     try {
       await shopService.deleteProduct(product.id);
       setMessage(`Le produit "${product.name}" a été supprimé avec succès.`);
       setOpenMenuId(null);
-      // Recharger les produits
+      // Recharger les produits en arrière-plan pour synchroniser
       if (onProductsChange) {
         await onProductsChange();
       }
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
+      // Remettre le produit en cas d'erreur
+      setLocalProducts(prev => [...prev, product].sort((a, b) => a.name.localeCompare(b.name)));
       const message = error instanceof Error ? error.message : 'Une erreur inconnue est survenue.';
       setMessage(`Impossible de supprimer "${product.name}". ${message}`);
     } finally {
@@ -238,7 +245,9 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-xl bg-(--color-surface-hover) px-3 py-2">
                     <p className="text-2xs uppercase tracking-wide text-(--color-text-tertiary)">Prix</p>
-                    <p className="mt-1 font-semibold text-(--color-text-primary)">{formatCurrency(product.price)}</p>
+                    <p className="mt-1 font-semibold text-(--color-text-primary)">
+                      {formatCurrency(product.price, product.currencyCode)}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-(--color-surface-hover) px-3 py-2">
                     <p className="text-2xs uppercase tracking-wide text-(--color-text-tertiary)">Stock</p>

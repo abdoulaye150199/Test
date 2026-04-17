@@ -39,6 +39,7 @@ export interface StoredProduct {
   name: string;
   category: string;
   price: number;
+  currencyCode?: string;
   stock: number;
   image?: string;
   images?: string[];

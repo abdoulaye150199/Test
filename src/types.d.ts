@@ -27,6 +27,7 @@ export interface Product {
   name: string;
   category: string;
   price: number;
+  currencyCode?: string;
   stock: number;
   image?: string;
   images?: string[];
@@ -94,6 +95,7 @@ export interface CreateProductInput {
   name: string;
   category: string;
   price: number;
+  currencyCode: string;
   quantity: number;
   ageRange: string;
   gender: string;
@@ -104,6 +106,7 @@ export interface ProductFormValues {
   name: string;
   category: string;
   price: string;
+  currencyCode: string;
   quantity: string;
   ageRange: string;
   gender: string;

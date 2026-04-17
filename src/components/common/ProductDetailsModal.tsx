@@ -92,7 +92,7 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
                   Prix
                 </p>
                 <p className="text-lg font-medium text-(--color-text-primary) mt-1">
-                  {formatCurrency(product.price)}
+                  {formatCurrency(product.price, product.currencyCode)}
                 </p>
               </div>
 

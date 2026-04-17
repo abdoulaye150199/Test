@@ -104,6 +104,12 @@ export const mapProduct = (input: unknown): Product => {
     name: String(source.name ?? source.title ?? 'Produit sans nom'),
     category: String(source.category ?? source.categoryName ?? 'Non classe'),
     price: parseNumber(source.price),
+    currencyCode:
+      typeof source.currencyCode === 'string'
+        ? source.currencyCode
+        : typeof source.currency_code === 'string'
+          ? source.currency_code
+          : undefined,
     stock,
     images: Array.isArray(source.images)
       ? source.images.filter((image): image is string => typeof image === 'string')

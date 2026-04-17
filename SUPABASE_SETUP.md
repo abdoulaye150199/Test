@@ -47,6 +47,7 @@ create table if not exists public.products (
   name text not null,
   category text not null,
   price numeric not null default 0,
+  currency_code text not null default 'XOF',
   stock integer not null default 0,
   image text,
   images text[] not null default '{}',
@@ -56,6 +57,13 @@ create table if not exists public.products (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+```
+
+Si ta table `products` existe déjà, ajoute simplement:
+
+```sql
+alter table public.products
+add column if not exists currency_code text not null default 'XOF';
 ```
 
 ## RLS policies

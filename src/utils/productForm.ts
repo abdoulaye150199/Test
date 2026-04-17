@@ -10,10 +10,11 @@ export const PRODUCT_CATEGORIES = [
 
 export const PRODUCT_AGE_RANGES = ['Adulte', 'Enfant'] as const;
 
-export const createEmptyProductForm = (): ProductFormValues => ({
+export const createEmptyProductForm = (currencyCode = 'XOF'): ProductFormValues => ({
   name: '',
   category: '',
   price: '',
+  currencyCode,
   quantity: '',
   ageRange: '',
   gender: '',
@@ -52,6 +53,10 @@ export const validateProductForm = (formData: ProductFormValues): Partial<Record
     }
   }
 
+  if (!formData.currencyCode.trim()) {
+    errors.currencyCode = 'La devise est requise';
+  }
+
   if (!formData.quantity.trim()) {
     errors.quantity = 'La quantite est requise';
   } else if (Number.isNaN(Number(formData.quantity)) || Number(formData.quantity) < 0) {
@@ -73,6 +78,7 @@ export const toCreateProductInput = (formData: ProductFormValues): CreateProduct
   name: formData.name.trim(),
   category: formData.category,
   price: extractPriceNumber(formData.price),
+  currencyCode: formData.currencyCode,
   quantity: Number(formData.quantity),
   ageRange: formData.ageRange,
   gender: formData.gender,

@@ -1,10 +1,14 @@
-export const formatCurrency = (value: number, currency: string = 'USD'): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
+export const formatCurrency = (value: number, currency?: string): string => {
+  try {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: currency || 'XOF',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return `${value} ${currency || 'XOF'}`;
+  }
 };
 
 export const formatPercentage = (value: number, decimals: number = 1): string => {

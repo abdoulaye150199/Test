@@ -10,6 +10,7 @@ type ProductRow = {
   name: string;
   category: string;
   price: number;
+  currency_code?: string | null;
   stock: number;
   image?: string | null;
   images?: string[] | null;
@@ -21,6 +22,13 @@ type ProductRow = {
 };
 
 const nowIso = (): string => new Date().toISOString();
+const PRODUCT_SELECT_BASE =
+  'id, owner_id, shop_id, reference, name, category, price, stock, image, images, age_range, gender, status, created_at, updated_at';
+const PRODUCT_SELECT_WITH_CURRENCY =
+  'id, owner_id, shop_id, reference, name, category, price, currency_code, stock, image, images, age_range, gender, status, created_at, updated_at';
+
+const isMissingCurrencyColumnError = (error: { message?: string } | null): boolean =>
+  typeof error?.message === 'string' && error.message.toLowerCase().includes('currency_code');
 
 const fileToDataUrl = async (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -114,11 +122,25 @@ const buildDashboardFromProducts = (products: Product[]): DashboardOverview => {
 export const getSupabaseProducts = async (): Promise<Product[]> => {
   const supabase = getSupabaseClient();
   const userId = await getCurrentUserId();
-  const { data, error } = await supabase
+  const initialResponse = await supabase
     .from('products')
-    .select('id, owner_id, shop_id, reference, name, category, price, stock, image, images, age_range, gender, status, created_at, updated_at')
+    .select(PRODUCT_SELECT_WITH_CURRENCY)
     .eq('owner_id', userId)
     .order('updated_at', { ascending: false });
+
+  let data = initialResponse.data as ProductRow[] | null;
+  let error = initialResponse.error;
+
+  if (error && isMissingCurrencyColumnError(error)) {
+    const fallbackResponse = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT_BASE)
+      .eq('owner_id', userId)
+      .order('updated_at', { ascending: false });
+
+    data = fallbackResponse.data as ProductRow[] | null;
+    error = fallbackResponse.error;
+  }
 
   if (error) {
     throw new Error(error.message || 'Impossible de charger les produits depuis Supabase.');
@@ -150,6 +172,7 @@ export const createSupabaseProduct = async (input: CreateProductInput): Promise<
     name: input.name,
     category: input.category,
     price: input.price,
+    currency_code: input.currencyCode,
     stock,
     image: imageValues[0] ?? null,
     images: imageValues,
@@ -160,22 +183,40 @@ export const createSupabaseProduct = async (input: CreateProductInput): Promise<
     updated_at: now,
   };
 
-  const { data, error } = await supabase
+  const initialResponse = await supabase
     .from('products')
     .insert(payload)
-    .select('id, owner_id, shop_id, reference, name, category, price, stock, image, images, age_range, gender, status, created_at, updated_at')
+    .select(PRODUCT_SELECT_WITH_CURRENCY)
     .single();
+
+  let data = initialResponse.data as ProductRow | null;
+  let error = initialResponse.error;
+
+  if (error && isMissingCurrencyColumnError(error)) {
+    const { currency_code: _currencyCode, ...legacyPayload } = payload;
+    const fallbackResponse = await supabase
+      .from('products')
+      .insert(legacyPayload)
+      .select(PRODUCT_SELECT_BASE)
+      .single();
+
+    data = fallbackResponse.data as ProductRow | null;
+    error = fallbackResponse.error;
+  }
 
   if (error || !data) {
     throw new Error(error?.message || 'Impossible d enregistrer le produit dans Supabase.');
   }
 
-  return mapProduct({
-    ...data,
-    ageRange: (data as ProductRow).age_range,
-    createdAt: (data as ProductRow).created_at,
-    updatedAt: (data as ProductRow).updated_at,
-  });
+  return {
+    ...mapProduct({
+      ...data,
+      ageRange: (data as ProductRow).age_range,
+      createdAt: (data as ProductRow).created_at,
+      updatedAt: (data as ProductRow).updated_at,
+    }),
+    currencyCode: (data as ProductRow).currency_code ?? input.currencyCode,
+  };
 };
 
 export const getSupabaseDashboardOverview = async (): Promise<DashboardOverview> => {

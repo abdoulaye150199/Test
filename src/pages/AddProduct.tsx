@@ -15,20 +15,28 @@ import {
   toCreateProductInput,
   validateProductForm,
 } from '../utils/productForm';
-import { getCurrencyByCountry, formatPrice } from '../utils/currency';
+import {
+  AVAILABLE_CURRENCIES,
+  getCurrencyByCode,
+  getCurrencyByCountry,
+  sanitizePriceInput,
+} from '../utils/currency';
 
 const AddProductPage: React.FC = () => {
   const location = useLocation();
   const editProduct = (location.state as { editProduct?: Product })?.editProduct;
   const { shop } = useAppSession();
-  const [formData, setFormData] = useState<ProductFormValues>(createEmptyProductForm());
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormValues, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [mainPreviewUrl, setMainPreviewUrl] = useState<string | null>(null);
 
-  const currency = getCurrencyByCountry(shop?.country);
+  const defaultCurrency = getCurrencyByCountry(shop?.country);
+  const [formData, setFormData] = useState<ProductFormValues>(() =>
+    createEmptyProductForm(defaultCurrency.code)
+  );
+  const selectedCurrency = getCurrencyByCode(formData.currencyCode);
 
   // Préremplir le formulaire si on est en édition
   useEffect(() => {
@@ -36,7 +44,8 @@ const AddProductPage: React.FC = () => {
       setFormData({
         name: editProduct.name,
         category: editProduct.category,
-        price: formatPrice(String(editProduct.price), shop?.country),
+        price: String(editProduct.price),
+        currencyCode: editProduct.currencyCode ?? defaultCurrency.code,
         quantity: String(editProduct.stock),
         ageRange: editProduct.ageRange || '',
         gender: editProduct.gender || '',
@@ -45,16 +54,26 @@ const AddProductPage: React.FC = () => {
       if (editProduct.image) {
         setMainPreviewUrl(editProduct.image);
       }
+      return;
     }
-  }, [editProduct, shop?.country]);
+
+    setFormData((previous) =>
+      previous.currencyCode
+        ? previous
+        : {
+            ...previous,
+            currencyCode: defaultCurrency.code,
+          }
+    );
+  }, [defaultCurrency.code, editProduct]);
 
   const handleInputChange = (field: keyof ProductFormValues, value: string) => {
     let normalizedValue = value;
     
-    if (field === 'category' || field === 'ageRange' || field === 'gender') {
+    if (field === 'category' || field === 'ageRange' || field === 'gender' || field === 'currencyCode') {
       normalizedValue = value.trim();
     } else if (field === 'price') {
-      normalizedValue = formatPrice(value, shop?.country);
+      normalizedValue = sanitizePriceInput(value);
     }
 
     setFormData((previous) => {
@@ -82,7 +101,7 @@ const AddProductPage: React.FC = () => {
   };
 
   const handleReset = () => {
-    setFormData(createEmptyProductForm());
+    setFormData(createEmptyProductForm(defaultCurrency.code));
     setErrors({});
     setSubmitError(null);
     setSubmitSuccess(null);
@@ -214,19 +233,38 @@ const AddProductPage: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-(--color-text-primary) mb-2">
                     Prix de l'article <span className="text-red-500">*</span>
-                    <span className="text-(--color-text-tertiary) font-normal ml-1">({currency.symbol})</span>
                   </label>
-                  <input
-                    type="text"
-                    value={formData.price}
-                    onChange={(event) => handleInputChange('price', event.target.value)}
-                    className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--color-primary) transition-all ${
-                      errors.price ? 'border-red-500' : 'border-(--color-border)'
-                    }`}
-                    placeholder="Entrez le prix"
-                  />
-                  <p className="text-xs text-(--color-text-tertiary) mt-1">{currency.name} ({currency.code})</p>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_10rem]">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={formData.price}
+                      onChange={(event) => handleInputChange('price', event.target.value)}
+                      className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--color-primary) transition-all ${
+                        errors.price ? 'border-red-500' : 'border-(--color-border)'
+                      }`}
+                      placeholder="Entrez le prix"
+                    />
+
+                    <select
+                      value={formData.currencyCode}
+                      onChange={(event) => handleInputChange('currencyCode', event.target.value)}
+                      className={`w-full px-3 md:px-4 py-2 md:py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--color-primary) transition-all ${
+                        errors.currencyCode ? 'border-red-500' : 'border-(--color-border)'
+                      }`}
+                    >
+                      {AVAILABLE_CURRENCIES.map((currency) => (
+                        <option key={currency.code} value={currency.code}>
+                          {currency.code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-xs text-(--color-text-tertiary) mt-1">
+                    Devise sélectionnée: {selectedCurrency.name} ({selectedCurrency.symbol})
+                  </p>
                   {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
+                  {errors.currencyCode && <p className="text-xs text-red-500 mt-1">{errors.currencyCode}</p>}
                 </div>
 
                 <div>

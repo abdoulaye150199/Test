@@ -1,5 +1,11 @@
 import React, { useEffect, useRef } from 'react';
-import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  X,
+} from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -15,6 +21,27 @@ interface NotificationsModalProps {
   onClose: () => void;
   notifications?: Notification[];
 }
+
+const getNotificationMeta = (type: Notification['type']) => {
+  switch (type) {
+    case 'success':
+      return {
+        icon: <CheckCircle size={16} className="text-(--color-success)" />,
+        iconWrapperClass: 'bg-emerald-50',
+      };
+    case 'warning':
+      return {
+        icon: <AlertCircle size={16} className="text-(--color-warning)" />,
+        iconWrapperClass: 'bg-amber-50',
+      };
+    case 'info':
+    default:
+      return {
+        icon: <Info size={16} className="text-(--color-info)" />,
+        iconWrapperClass: 'bg-blue-50',
+      };
+  }
+};
 
 const NotificationsModal: React.FC<NotificationsModalProps> = ({
   isOpen,
@@ -63,18 +90,6 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'success':
-        return <CheckCircle size={20} className="text-green-500" />;
-      case 'warning':
-        return <AlertCircle size={20} className="text-yellow-500" />;
-      case 'info':
-      default:
-        return <Info size={20} className="text-blue-500" />;
-    }
-  };
-
   const formatTime = (date: Date): string => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -90,84 +105,93 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
-      
-      <div
-        ref={modalRef}
-        className="fixed right-3 top-20 z-50 w-96 max-w-[calc(100vw-24px)] rounded-xl border border-(--color-border) bg-white shadow-xl md:right-8"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-(--color-border) p-4">
-          <div>
+    <div
+      ref={modalRef}
+      className="animate-fade-in absolute right-0 top-full z-50 mt-3 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-(--color-border) bg-white shadow-xl"
+      role="dialog"
+      aria-label="Notifications"
+    >
+      <div className="absolute -top-1 right-5 h-3 w-3 rotate-45 border-l border-t border-(--color-border) bg-white" />
+
+      <div className="relative border-b border-(--color-border) px-4 py-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <h2 className="text-sm font-semibold text-(--color-text-primary)">Notifications</h2>
-            {unreadCount > 0 && (
-              <p className="text-2xs text-(--color-text-tertiary)">{unreadCount} non lue(s)</p>
-            )}
+            <p className="mt-0.5 text-xs text-(--color-text-secondary)">
+              {unreadCount > 0
+                ? `${unreadCount} non lue${unreadCount > 1 ? 's' : ''}`
+                : 'Aucune notification non lue'}
+            </p>
           </div>
-          <button
-            onClick={onClose}
-            className="icon-btn shrink-0"
-            title="Fermer"
-          >
-            <X size={18} />
+
+          <button onClick={onClose} className="icon-btn h-8 w-8 shrink-0" title="Fermer">
+            <X size={16} />
           </button>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="max-h-96 overflow-y-auto">
-          {notifications.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-center">
-              <div>
-                <Info size={32} className="mx-auto mb-2 text-(--color-text-tertiary)" />
-                <p className="text-sm text-(--color-text-secondary)">Aucune notification</p>
-              </div>
+      <div className="max-h-80 overflow-y-auto py-2">
+        {notifications.length === 0 ? (
+          <div className="px-4 py-10 text-center">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-(--color-secondary) text-(--color-text-tertiary)">
+              <Info size={18} />
             </div>
-          ) : (
-            <div className="divide-y divide-(--color-border)">
-              {notifications.map((notification) => (
-                <div
+            <p className="mt-3 text-sm font-medium text-(--color-text-primary)">Aucune notification</p>
+          </div>
+        ) : (
+          <>
+            {notifications.map((notification) => {
+              const meta = getNotificationMeta(notification.type);
+
+              return (
+                <button
                   key={notification.id}
-                  className={`flex gap-3 p-4 transition-colors hover:bg-(--color-surface-hover) cursor-pointer ${
-                    !notification.read ? 'bg-(--color-secondary)' : ''
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-(--color-surface-hover) ${
+                    !notification.read ? 'bg-emerald-50/40' : ''
                   }`}
                 >
-                  {/* Icon */}
-                  <div className="shrink-0 pt-1">{getIcon(notification.type)}</div>
+                  <div
+                    className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${meta.iconWrapperClass}`}
+                  >
+                    {meta.icon}
+                  </div>
 
-                  {/* Content */}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-(--color-text-primary)">
-                        {notification.title}
-                      </h3>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-(--color-text-primary)">
+                          {notification.title}
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-(--color-text-secondary)">
+                          {notification.message}
+                        </p>
+                      </div>
+
                       {!notification.read && (
-                        <div className="shrink-0 h-2 w-2 rounded-full bg-(--color-primary) mt-1" />
+                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-(--color-primary)" />
                       )}
                     </div>
-                    <p className="text-2xs text-(--color-text-secondary) mt-1">
-                      {notification.message}
-                    </p>
-                    <p className="text-2xs text-(--color-text-tertiary) mt-1">
+
+                    <p className="mt-1 text-[11px] text-(--color-text-tertiary)">
                       {formatTime(notification.timestamp)}
                     </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        {notifications.length > 0 && (
-          <div className="border-t border-(--color-border) p-3 text-center">
-            <button className="text-2xs font-medium text-(--color-primary) hover:underline">
-              Voir toutes les notifications
-            </button>
-          </div>
+                </button>
+              );
+            })}
+          </>
         )}
       </div>
-    </>
+
+      {notifications.length > 0 && (
+        <div className="border-t border-(--color-border) p-2">
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-(--color-primary) transition-colors hover:bg-(--color-primary-lightest)">
+            Voir toutes les notifications
+            <ArrowRight size={15} />
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 

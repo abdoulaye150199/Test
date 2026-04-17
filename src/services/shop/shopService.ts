@@ -39,6 +39,7 @@ const createProductPayload = (input: CreateProductInput): FormData => {
   payload.append('name', input.name);
   payload.append('category', input.category);
   payload.append('price', String(input.price));
+  payload.append('currencyCode', input.currencyCode);
   payload.append('quantity', String(input.quantity));
   payload.append('ageRange', input.ageRange);
   payload.append('gender', input.gender);

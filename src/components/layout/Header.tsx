@@ -48,23 +48,29 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-4 md:gap-6">
-        <button 
-          onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-          className="icon-btn relative" 
-          title="Notifications"
-        >
-          <Bell size={20} />
-          {notificationCount > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-(--color-error) text-2xs font-semibold text-white">
-              {notificationCount}
-            </span>
-          )}
-        </button>
+        <div className="relative">
+          <button 
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            className={`icon-btn relative transition-all ${
+              isNotificationsOpen
+                ? 'bg-(--color-primary-lightest) text-(--color-primary)'
+                : ''
+            }`}
+            title="Notifications"
+          >
+            <Bell size={20} />
+            {notificationCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-(--color-error) text-2xs font-semibold text-white ring-2 ring-white">
+                {notificationCount}
+              </span>
+            )}
+          </button>
 
-        <NotificationsModal
-          isOpen={isNotificationsOpen}
-          onClose={() => setIsNotificationsOpen(false)}
-        />
+          <NotificationsModal
+            isOpen={isNotificationsOpen}
+            onClose={() => setIsNotificationsOpen(false)}
+          />
+        </div>
 
         <button className="hidden sm:flex items-center gap-3 hover:bg-(--color-surface-hover) rounded-lg px-3 py-2 transition-colors">
           <div className="w-8 md:w-10 h-8 md:h-10 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
