@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EllipsisVertical, Search, Eye, Edit2, Trash2 } from 'lucide-react';
+import { Search, Eye, Edit2, Trash2 } from 'lucide-react';
 import Tabs, { Tab } from '../common/Tabs';
 import Pagination from '../common/Pagination';
 import ProductDetailsModal from '../common/ProductDetailsModal';
@@ -8,14 +8,16 @@ import type { Product, ProductFilter } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { shopService } from '../../services/shop/shopService';
 
-const ITEMS_PER_PAGE = 6;
+const DEFAULT_ITEMS_PER_PAGE = 6;
+const ACTION_MENU_GAP = 8;
 
 interface ProductsTableProps {
   products: Product[];
   onProductsChange?: () => Promise<void>;
+  itemsPerPage?: number;
 }
 
-const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChange }) => {
+const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChange, itemsPerPage = DEFAULT_ITEMS_PER_PAGE }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ProductFilter>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -26,7 +28,6 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [localProducts, setLocalProducts] = useState<Product[]>(products);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const tabs: Tab[] = [
     { id: 'all', label: 'Produits', count: localProducts.length },
@@ -59,12 +60,12 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
     }
   }, [message]);
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
     return filteredProducts.slice(startIndex, endIndex);
-  }, [filteredProducts, currentPage]);
+  }, [filteredProducts, currentPage, itemsPerPage]);
 
   const getStatusBadge = (status: Product['status']) => {
     switch (status) {
@@ -120,19 +121,81 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
 
   const ActionMenu: React.FC<{ product: Product }> = ({ product }) => {
     const isOpen = openMenuId === product.id;
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const [menuStyle, setMenuStyle] = useState<React.CSSProperties | null>(null);
+
+    useEffect(() => {
+      if (!isOpen || !buttonRef.current || !menuRef.current) {
+        return;
+      }
+
+      const rect = buttonRef.current.getBoundingClientRect();
+      const menuHeight = menuRef.current.offsetHeight;
+      const menuWidth = menuRef.current.offsetWidth;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpward = spaceBelow < menuHeight + ACTION_MENU_GAP;
+      const top = openUpward
+        ? Math.max(ACTION_MENU_GAP, rect.top - menuHeight - ACTION_MENU_GAP)
+        : rect.bottom + ACTION_MENU_GAP;
+      const left = Math.min(
+        rect.right - menuWidth,
+        window.innerWidth - menuWidth - ACTION_MENU_GAP
+      );
+
+      setMenuStyle({
+        position: 'fixed',
+        top,
+        left: Math.max(ACTION_MENU_GAP, left),
+        width: 192,
+        zIndex: 9999,
+      });
+    }, [isOpen]);
+
+    const toggleMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
+      event.stopPropagation();
+      if (isOpen) {
+        setOpenMenuId(null);
+        setMenuStyle(null);
+        return;
+      }
+
+      setOpenMenuId(product.id);
+    };
 
     return (
-      <div className="relative" ref={isOpen ? menuRef : null}>
+      <div className="inline-flex relative">
         <button
-          onClick={() => setOpenMenuId(isOpen ? null : product.id)}
+          ref={buttonRef}
+          type="button"
+          onClick={toggleMenu}
           className="icon-btn"
           title="Plus d'options"
+          aria-label="Ouvrir le menu d'actions"
+          style={{
+            color: 'var(--color-text-primary)',
+            backgroundColor: 'var(--color-surface)',
+            border: '1px solid var(--color-border)',
+          }}
         >
-          <EllipsisVertical size={16} />
+          <span aria-hidden="true" style={{ fontSize: '1.15rem', lineHeight: 1 }}>
+            ⋮
+          </span>
         </button>
 
         {isOpen && (
-          <div className="absolute -right-2 top-8 z-50 w-48 rounded-lg border border-(--color-border) bg-white shadow-xl">
+          <div
+            ref={menuRef}
+            style={menuStyle ?? {
+              position: 'fixed',
+              top: ACTION_MENU_GAP,
+              left: ACTION_MENU_GAP,
+              width: 192,
+              zIndex: 9999,
+              visibility: 'hidden',
+            }}
+            className="rounded-lg border border-(--color-border) bg-white shadow-xl"
+          >
             <button
               onClick={() => {
                 handleViewDetails(product);
@@ -228,8 +291,8 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-(--color-text-primary)">{product.name}</p>
-                      <p className="truncate text-xs text-(--color-text-secondary)">{product.category}</p>
+                      <p className="truncate text-xs font-semibold text-(--color-text-primary)">{product.name}</p>
+                      <p className="truncate text-2xs text-(--color-text-secondary)">{product.category}</p>
                     </div>
                   </div>
                   <ActionMenu product={product} />
@@ -237,12 +300,12 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
 
                 <div className="flex flex-wrap items-center gap-2">
                   {getStatusBadge(product.status)}
-                  <span className="rounded-full bg-(--color-surface-hover) px-3 py-1 text-xs font-medium text-(--color-text-secondary)">
+                  <span className="rounded-full bg-(--color-surface-hover) px-3 py-1 text-2xs font-medium text-(--color-text-secondary)">
                     Ref: {product.reference}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="rounded-xl bg-(--color-surface-hover) px-3 py-2">
                     <p className="text-2xs uppercase tracking-wide text-(--color-text-tertiary)">Prix</p>
                     <p className="mt-1 font-semibold text-(--color-text-primary)">
@@ -262,57 +325,65 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onProductsChang
         <table className="table">
           <thead>
             <tr>
-              <th className="text-xs md:text-sm">Références</th>
-              <th className="hidden sm:table-cell text-xs md:text-sm">Product</th>
-              <th className="hidden md:table-cell text-xs md:text-sm">Catégories produits</th>
-              <th className="text-xs md:text-sm">Qté</th>
-              <th className="hidden lg:table-cell text-xs md:text-sm">Statut Stock</th>
-              <th className="text-xs md:text-sm">Action</th>
+              <th className="text-2xs md:text-xs">Références</th>
+              <th className="hidden sm:table-cell text-2xs md:text-xs">Product</th>
+              <th className="hidden md:table-cell text-2xs md:text-xs">Catégories produits</th>
+              <th className="text-2xs md:text-xs">Qté</th>
+              <th className="hidden lg:table-cell text-2xs md:text-xs">Statut Stock</th>
+              <th className="text-2xs md:text-xs">Action</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedProducts.map((product) => (
-              <tr key={product.id}>
-                <td className="font-medium text-xs md:text-sm">{product.reference}</td>
-                <td className="hidden sm:table-cell">
-                  <div className="flex items-center gap-2 md:gap-3">
-                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-(--color-secondary) flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {product.image ? (
-                        <img 
-                          src={product.image} 
-                          alt={product.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-2xs md:text-xs text-(--color-text-tertiary)">
-                          IMG
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs md:text-sm truncate">{product.name}</span>
-                  </div>
-                </td>
-                <td className="hidden md:table-cell text-xs md:text-sm text-(--color-text-secondary)">{product.category}</td>
-                <td className="font-medium text-xs md:text-sm">{product.stock}</td>
-                <td className="hidden lg:table-cell text-xs md:text-sm">{getStatusBadge(product.status)}</td>
-                <td>
-                  <ActionMenu product={product} />
+            {paginatedProducts.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-sm text-(--color-text-secondary)">
+                  {searchQuery ? 'Aucun produit trouvé pour votre recherche' : 'Aucun produit trouvé'}
                 </td>
               </tr>
-            ))}
+            ) : (
+              paginatedProducts.map((product) => (
+                <tr key={product.id}>
+                  <td className="font-medium text-2xs md:text-xs">{product.reference}</td>
+                  <td className="hidden sm:table-cell">
+                    <div className="flex items-center gap-2 md:gap-3">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-(--color-secondary) flex items-center justify-center overflow-hidden shrink-0">
+                        {product.image ? (
+                          <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-2xs md:text-xs text-(--color-text-tertiary)">
+                            IMG
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-2xs md:text-xs truncate">{product.name}</span>
+                    </div>
+                  </td>
+                  <td className="hidden md:table-cell text-2xs md:text-xs text-(--color-text-secondary)">{product.category}</td>
+                  <td className="font-medium text-2xs md:text-xs">{product.stock}</td>
+                  <td className="hidden lg:table-cell text-2xs md:text-xs">{getStatusBadge(product.status)}</td>
+                  <td>
+                    <ActionMenu product={product} />
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
           </div>
         </>
       )}
 
-      {filteredProducts.length > ITEMS_PER_PAGE && (
+      {filteredProducts.length > itemsPerPage && (
         <div className="px-3 md:px-4">
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            itemsPerPage={ITEMS_PER_PAGE}
+            itemsPerPage={itemsPerPage}
             totalItems={filteredProducts.length}
           />
         </div>
