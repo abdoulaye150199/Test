@@ -233,7 +233,10 @@ export const BoutiqueRegisterPage: FC = () => {
                   value={values.phoneNumber}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  placeholder="77 456 98 09"
+                  placeholder="771234567"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={9}
                   className={`auth-input min-w-0 flex-1 ${errors.phoneNumber && touched.phoneNumber ? 'ring-2 ring-red-500 focus:ring-red-500 border-red-500' : ''}`}
                 />
               </div>

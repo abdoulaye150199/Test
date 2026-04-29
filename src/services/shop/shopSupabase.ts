@@ -122,10 +122,17 @@ const buildDashboardFromProducts = (products: Product[]): DashboardOverview => {
 export const getSupabaseProducts = async (): Promise<Product[]> => {
   const supabase = getSupabaseClient();
   const userId = await getCurrentUserId();
+  const shopId = await getCurrentShopId(userId);
+
+  if (!shopId) {
+    throw new Error('Boutique introuvable.');
+  }
+
   const initialResponse = await supabase
     .from('products')
     .select(PRODUCT_SELECT_WITH_CURRENCY)
     .eq('owner_id', userId)
+    .eq('shop_id', shopId)
     .order('updated_at', { ascending: false });
 
   let data = initialResponse.data as ProductRow[] | null;
@@ -136,6 +143,7 @@ export const getSupabaseProducts = async (): Promise<Product[]> => {
       .from('products')
       .select(PRODUCT_SELECT_BASE)
       .eq('owner_id', userId)
+      .eq('shop_id', shopId)
       .order('updated_at', { ascending: false });
 
     data = fallbackResponse.data as ProductRow[] | null;

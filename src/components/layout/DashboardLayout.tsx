@@ -49,6 +49,7 @@ const DashboardLayout = ({ children, activePath }: DashboardLayoutProps) => {
           shopName={shop?.name}
           notificationCount={1}
           onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          onLogout={() => void handleLogout()}
         />
         <main className="min-h-[calc(100vh-4rem)] overflow-x-hidden p-4 md:min-h-[calc(100vh-5rem)] md:p-6 lg:p-8">
           {children}

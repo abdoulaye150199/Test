@@ -33,6 +33,7 @@ export interface Product {
   images?: string[];
   ageRange?: string;
   gender?: string;
+  shopId?: string;
   status: ProductStatus;
   createdAt: Date;
   updatedAt: Date;

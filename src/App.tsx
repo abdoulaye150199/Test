@@ -68,8 +68,8 @@ const App: React.FC = () => {
       <Route path="/ventes" element={<ShopRoute><SalesPage /></ShopRoute>} />
       <Route path="/produits" element={<ShopRoute><ProductsPage /></ShopRoute>} />
       <Route path="/produits/ajouter" element={<ShopRoute><AddProductPage /></ShopRoute>} />
-      <Route path="/" element={<RootRedirect />} />
-      <Route path="*" element={<RootRedirect />} />
+      <Route path="/" element={<GuestRoute><LoginPage /></GuestRoute>} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 };

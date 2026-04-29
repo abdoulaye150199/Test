@@ -117,6 +117,14 @@ export const mapProduct = (input: unknown): Product => {
     image: typeof source.image === 'string' ? source.image : typeof source.imageUrl === 'string' ? source.imageUrl : undefined,
     ageRange: typeof source.ageRange === 'string' ? source.ageRange : undefined,
     gender: typeof source.gender === 'string' ? source.gender : undefined,
+    shopId:
+      typeof source.shopId === 'string'
+        ? source.shopId
+        : typeof source.shop_id === 'string'
+          ? source.shop_id
+          : typeof source.shop === 'string'
+            ? source.shop
+            : undefined,
     status: normalizeProductStatus(source.status, stock),
     createdAt: parseDate(source.createdAt ?? source.created_at),
     updatedAt: parseDate(source.updatedAt ?? source.updated_at),

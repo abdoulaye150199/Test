@@ -22,9 +22,13 @@ export const useForm = <T extends Record<string, any>>(
 
   const handleChange = (e: ChangeEvent<FormFieldElement>): void => {
     const { name, value } = e.target;
+    const newValue = name === 'phoneNumber'
+      ? value.replace(/\D/g, '').slice(0, 9)
+      : value;
+
     setValues((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: newValue,
     }));
     
     if (errors[name]) {

@@ -45,6 +45,7 @@ export interface StoredProduct {
   images?: string[];
   ageRange?: string;
   gender?: string;
+  shopId?: string | null;
   status: 'in_stock' | 'out_of_stock' | 'low_stock';
   createdAt: string;
   updatedAt: string;
@@ -93,10 +94,46 @@ export const loadStoredAppState = (): StoredAppState => {
   }
 };
 
+const getPersistableProduct = (product: StoredProduct): StoredProduct => {
+  const { image, images, ...productData } = product;
+  return productData;
+};
+
+const getPersistableShop = (shop: StoredShop | null): StoredShop | null => {
+  if (!shop) {
+    return null;
+  }
+
+  const { logo, ...shopData } = shop;
+  return shopData;
+};
+
+const buildPersistableState = (state: StoredAppState): StoredAppState => ({
+  auth: state.auth,
+  users: state.users,
+  shop: getPersistableShop(state.shop),
+  dashboard: state.dashboard,
+  products: state.products.map(getPersistableProduct),
+  sales: state.sales,
+});
+
 export const saveStoredAppState = (state: StoredAppState): void => {
   if (typeof window === 'undefined') {
     return;
   }
 
-  window.localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(state));
+  try {
+    window.localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(buildPersistableState(state)));
+  } catch (error) {
+    try {
+      const fallbackState = {
+        ...state,
+        shop: getPersistableShop(state.shop),
+        products: state.products.map(getPersistableProduct),
+      };
+      window.localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(fallbackState));
+    } catch {
+      // Ignore quota errors and avoid crashing the app when storage is full.
+    }
+  }
 };

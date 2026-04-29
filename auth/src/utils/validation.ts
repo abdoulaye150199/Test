@@ -44,7 +44,7 @@ export const boutiqueValidationSchema = z.object({
     .regex(/^[0-9]{5}$/, 'Le code doit contenir 5 chiffres'),
   country: z.string().min(1, 'Le pays est requis'),
   phoneNumber: z.string()
-    .regex(/^[0-9\s\-\+]{6,20}$/, 'Le numéro de téléphone invalide'),
+    .regex(/^[0-9]{9}$/, 'Le numéro de téléphone doit contenir exactement 9 chiffres'),
   description: z.string()
     .min(10, 'La description doit contenir au moins 10 caractères')
     .max(1000, 'La description doit contenir au maximum 1000 caractères'),
